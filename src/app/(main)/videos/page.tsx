@@ -16,15 +16,8 @@ import {
   type SortKey,
   type VideoFilterState,
 } from "@/components/video/videoFilters";
-import {
-  categories,
-  categoryLabel,
-  getAllLessonsInListOrder,
-  getChapter,
-  getCourse,
-  levelFilterLabel,
-  tools,
-} from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { levelFilterLabel } from "@/lib/content/format";
 import type { CategoryKey, Lesson } from "@/lib/types";
 
 const PER_PAGE = 9;
@@ -33,16 +26,31 @@ const PER_PAGE = 9;
 type AppliedTag = { key: string; label: string; clear: () => void };
 
 export default function VideosPage() {
+  const content = useContent();
+  const { categories, categoryLabel, tools } = content;
   const [filter, setFilter] = useState<VideoFilterState>(emptyVideoFilter);
   const [sort, setSort] = useState<SortKey>("recommended");
   const [page, setPage] = useState(1);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const base = useMemo(() => getAllLessonsInListOrder(), []);
+  const base = useMemo(() => content.getAllLessonsInListOrder(), [content]);
   const results = useMemo(
-    () => sortLessons(filterLessons(base, filter), sort),
-    [base, filter, sort],
+    () => sortLessons(filterLessons(base, filter, content), sort, content),
+    [base, filter, sort, content],
   );
+
+  /** Mobile のカードに出すメタ行「動画編集 ・ Premiere Pro 実践コース ・ Chapter 2」 */
+  const mobileMeta = (lesson: Lesson): string => {
+    const course = content.getCourse(lesson.courseId);
+    const chapter = content.getChapter(lesson.chapterId);
+    return [
+      categoryLabel(lesson.category),
+      course?.title,
+      chapter ? `Chapter ${chapter.number}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(" ・ ");
+  };
 
   const totalPages = Math.max(1, Math.ceil(results.length / PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -242,19 +250,6 @@ export default function VideosPage() {
       </main>
     </>
   );
-}
-
-/** Mobile のカードに出すメタ行「動画編集 ・ Premiere Pro 実践コース ・ Chapter 2」 */
-function mobileMeta(lesson: Lesson): string {
-  const course = getCourse(lesson.courseId);
-  const chapter = getChapter(lesson.chapterId);
-  return [
-    categoryLabel(lesson.category),
-    course?.title,
-    chapter ? `Chapter ${chapter.number}` : undefined,
-  ]
-    .filter(Boolean)
-    .join(" ・ ");
 }
 
 /** Mobile の並び替え（見た目は 32px のピル、中身は select） */

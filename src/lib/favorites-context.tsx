@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { favoriteCourseIds, favoriteLessonIds } from "@/lib/mock";
+import { dummyProgress } from "@/lib/progress/dummy";
 
 /**
  * お気に入りの状態管理。
@@ -20,8 +20,8 @@ type FavoritesValue = {
 const FavoritesContext = createContext<FavoritesValue | null>(null);
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
-  const [lessonIds, setLessonIds] = useState<string[]>(favoriteLessonIds);
-  const [courseIds, setCourseIds] = useState<string[]>(favoriteCourseIds);
+  const [lessonIds, setLessonIds] = useState<string[]>(dummyProgress.favoriteLessonIds);
+  const [courseIds, setCourseIds] = useState<string[]>([]);
 
   const toggleLesson = useCallback((lessonId: string) => {
     setLessonIds((prev) =>

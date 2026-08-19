@@ -1,5 +1,8 @@
+"use client";
+
 import { PlayTriangle } from "@/components/ui/Button";
-import { formatDuration, tools } from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { formatDuration } from "@/lib/content/format";
 import type { LessonStatus, ToolKey } from "@/lib/types";
 
 /**
@@ -98,6 +101,7 @@ export function VideoThumbnail({
   style?: React.CSSProperties;
   children?: React.ReactNode;
 }) {
+  const { tools } = useContent();
   const t = tools[tool];
   const s = scaleSpec[scale];
   const hasProgress = status !== "not_started";

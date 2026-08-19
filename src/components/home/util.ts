@@ -1,4 +1,5 @@
-import { formatDuration, getLesson, getProgress, todayLabel } from "@/lib/mock";
+import type { ContentApi } from "@/lib/content/api";
+import { formatDuration } from "@/lib/content/format";
 
 /** "2026-08-18" → "2026/08/18" */
 export function formatDate(iso: string): string {
@@ -11,34 +12,38 @@ function localDate(year: number, month: number, day: number): number {
 }
 
 /** todayLabel（"2026年8月19日（水）"）を基準日として解釈する */
-function today(): number {
+function today(todayLabel: string): number {
   const m = todayLabel.match(/(\d+)年(\d+)月(\d+)日/);
   if (!m) return Date.now();
   return localDate(Number(m[1]), Number(m[2]), Number(m[3]));
 }
 
 /** 新着バッジ（Claude Design で NEW が付いていたのは 3 日以内の動画） */
-export function isNewLesson(publishedAt: string, withinDays = 3): boolean {
+export function isNewLesson(
+  todayLabel: string,
+  publishedAt: string,
+  withinDays = 3,
+): boolean {
   const m = publishedAt.match(/(\d+)-(\d+)-(\d+)/);
   if (!m) return false;
   const published = localDate(Number(m[1]), Number(m[2]), Number(m[3]));
-  return (today() - published) / 86_400_000 <= withinDays;
+  return (today(todayLabel) - published) / 86_400_000 <= withinDays;
 }
 
 /** 「残り 04:53」 */
-export function remainingLabel(lessonId: string): string {
-  const lesson = getLesson(lessonId);
+export function remainingLabel(content: ContentApi, lessonId: string): string {
+  const lesson = content.getLesson(lessonId);
   if (!lesson) return "";
-  const { positionSeconds } = getProgress(lessonId);
+  const { positionSeconds } = content.getProgress(lessonId);
   const rest = Math.max(0, lesson.durationSeconds - positionSeconds);
   return `残り ${formatDuration(rest)}`;
 }
 
 /** 「07:52 / 12:45 まで視聴」 */
-export function watchedLabel(lessonId: string): string {
-  const lesson = getLesson(lessonId);
+export function watchedLabel(content: ContentApi, lessonId: string): string {
+  const lesson = content.getLesson(lessonId);
   if (!lesson) return "";
-  const { positionSeconds } = getProgress(lessonId);
+  const { positionSeconds } = content.getProgress(lessonId);
   return `${formatDuration(positionSeconds)} / ${formatDuration(lesson.durationSeconds)} まで視聴`;
 }
 

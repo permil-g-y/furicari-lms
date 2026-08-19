@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { WatchView } from "@/components/video/WatchView";
-import { allLessons, getLesson } from "@/lib/mock";
+import { getContent } from "@/lib/content/server";
 
-export function generateStaticParams() {
-  return allLessons.map((lesson) => ({ lessonId: lesson.id }));
-}
+// レッスンは Supabase 由来になったため静的生成できない（generateStaticParams は廃止）。
 
 export default async function WatchPage({
   params,
@@ -12,7 +10,8 @@ export default async function WatchPage({
   params: Promise<{ lessonId: string }>;
 }) {
   const { lessonId } = await params;
-  if (!getLesson(lessonId)) notFound();
+  const content = await getContent();
+  if (!content.getLesson(lessonId)) notFound();
 
   return <WatchView lessonId={lessonId} />;
 }

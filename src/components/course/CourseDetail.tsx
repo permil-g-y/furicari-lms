@@ -6,20 +6,12 @@ import { Icon } from "@/components/ui/Icon";
 import { ProgressBar, SectionHeading } from "@/components/ui/ProgressBar";
 import { CourseStatusBadge, Tag } from "@/components/ui/Tag";
 import { VideoThumbnail } from "@/components/video/VideoThumbnail";
+import { useContent } from "@/lib/content/context";
 import {
-  categoryLabel,
-  courseLongDescription,
   formatDuration,
   formatLessonNumber,
-  getChapter,
-  getChaptersByCourse,
-  getCoursePercent,
-  getLesson,
-  getLessonsByCourse,
-  getProgress,
-  getResumeLessonId,
   levelLabel,
-} from "@/lib/mock";
+} from "@/lib/content/format";
 import { useFavorites } from "@/lib/favorites-context";
 import type { Course } from "@/lib/types";
 import { CourseCurriculum } from "./CourseCurriculum";
@@ -29,15 +21,25 @@ import { CourseCurriculum } from "./CourseCurriculum";
  * PC: パンくず → ヒーロー → このコースで学べること → カリキュラム
  * Mobile: ヒーロー → 学習進捗カード → 学べること → カリキュラム → 下部固定 CTA
  */
-export function CourseDetail({ course }: { course: Course }) {
-  const percent = getCoursePercent(course);
-  const chapters = getChaptersByCourse(course.id);
-  const lessons = getLessonsByCourse(course.id);
-  const resumeLessonId = getResumeLessonId(course);
-  const resumeLesson = getLesson(resumeLessonId);
-  const resumeChapter = resumeLesson ? getChapter(resumeLesson.chapterId) : undefined;
+export function CourseDetail({
+  course,
+  longDescription,
+}: {
+  course: Course;
+  longDescription?: string;
+}) {
+  const content = useContent();
+  const categoryLabel = content.categoryLabel;
+  const percent = content.getCoursePercent(course);
+  const chapters = content.getChaptersByCourse(course.id);
+  const lessons = content.getLessonsByCourse(course.id);
+  const resumeLessonId = content.getResumeLessonId(course);
+  const resumeLesson = content.getLesson(resumeLessonId);
+  const resumeChapter = resumeLesson
+    ? content.getChapter(resumeLesson.chapterId)
+    : undefined;
   const remainingLessons = course.totalLessons - course.completedLessons;
-  const description = courseLongDescription[course.id] ?? course.description;
+  const description = longDescription ?? course.description;
   const watchHref = resumeLesson ? `/watch/${resumeLesson.id}` : `/courses/${course.id}`;
 
   /** 「残り 06:12」 */
@@ -45,7 +47,8 @@ export function CourseDetail({ course }: { course: Course }) {
     ? formatDuration(
         Math.max(
           0,
-          resumeLesson.durationSeconds - getProgress(resumeLesson.id).positionSeconds,
+          resumeLesson.durationSeconds -
+            content.getProgress(resumeLesson.id).positionSeconds,
         ),
       )
     : "";

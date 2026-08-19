@@ -1,10 +1,6 @@
 import { notFound } from "next/navigation";
 import { CourseDetail } from "@/components/course/CourseDetail";
-import { courses, getCourse } from "@/lib/mock";
-
-export function generateStaticParams() {
-  return courses.map((course) => ({ courseId: course.id }));
-}
+import { getContentBundle } from "@/lib/content/server";
 
 export default async function CourseDetailPage({
   params,
@@ -12,9 +8,12 @@ export default async function CourseDetailPage({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = await params;
-  const course = getCourse(courseId);
+  const { api, longDescriptions } = await getContentBundle();
+  const course = api.getCourse(courseId);
 
   if (!course) notFound();
 
-  return <CourseDetail course={course} />;
+  return (
+    <CourseDetail course={course} longDescription={longDescriptions[course.id]} />
+  );
 }

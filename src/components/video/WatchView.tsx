@@ -6,35 +6,31 @@ import Link from "next/link";
 import { useState } from "react";
 import { Tag } from "@/components/ui/Tag";
 import { useFavorites } from "@/lib/favorites-context";
+import { useContent } from "@/lib/content/context";
 import {
-  categoryLabel,
   formatDuration,
   formatLessonNumber,
-  getAdjacentLessons,
-  getChapter,
-  getCourse,
-  getLesson,
-  getLessonStatus,
-  getLessonsByCourse,
-  getProgress,
   levelLabel,
-  tools,
-} from "@/lib/mock";
+} from "@/lib/content/format";
 import type { Lesson } from "@/lib/types";
 import { MobileVideoPlayer } from "./MobileVideoPlayer";
 import { VideoPlayer } from "./VideoPlayer";
 import { CurriculumPanel, MobileCurriculum } from "./WatchCurriculum";
 
 export function WatchView({ lessonId }: { lessonId: string }) {
-  const lesson = getLesson(lessonId)!;
-  const course = getCourse(lesson.courseId);
-  const chapter = getChapter(lesson.chapterId);
-  const progress = getProgress(lesson.id);
-  const { prev, next } = getAdjacentLessons(lesson.id);
-  const totalInCourse = getLessonsByCourse(lesson.courseId).length;
+  const content = useContent();
+  const { categoryLabel, tools } = content;
+  const lesson = content.getLesson(lessonId)!;
+  const course = content.getCourse(lesson.courseId);
+  const chapter = content.getChapter(lesson.chapterId);
+  const progress = content.getProgress(lesson.id);
+  const { prev, next } = content.getAdjacentLessons(lesson.id);
+  const totalInCourse = content.getLessonsByCourse(lesson.courseId).length;
   const { isLessonFavorite, toggleLesson } = useFavorites();
 
-  const [watched, setWatched] = useState(getLessonStatus(lesson.id) === "completed");
+  const [watched, setWatched] = useState(
+    content.getLessonStatus(lesson.id) === "completed",
+  );
   const [tab, setTab] = useState<"about" | "list">("about");
 
   const favorite = isLessonFavorite(lesson.id);

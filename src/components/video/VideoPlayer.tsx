@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { formatDuration, tools } from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { formatDuration } from "@/lib/content/format";
 import type { ToolKey } from "@/lib/types";
 
 /**
@@ -9,8 +10,15 @@ import type { ToolKey } from "@/lib/types";
  *
  * Phase 4 で Cloudflare Stream の埋め込みに差し替える想定のため、
  * 「16:9 のステージ」と「コントロールバー」をこのコンポーネントに閉じている。
- * 差し替え時は `streamVideoId` を使って <Stream /> を描画し、
- * コントロールバーをプレイヤー API に接続すればよい。
+ *
+ * ■ Phase 4 の差し替えポイント
+ *   `streamVideoId`（= Cloudflare Stream の Video UID）が渡ってきたら、
+ *   下の「映像ステージ」を <Stream src={streamVideoId} /> に置き換え、
+ *   コントロールバーをそのプレイヤー API に接続する。
+ *   現時点では全レッスンが `streamVideoId: undefined` なので、
+ *   値の有無にかかわらずダミープレイヤーを描画する（見た目を変えない）。
+ *   Phase 4 では「streamVideoId があれば <Stream />、なければ従来のステージ」
+ *   という分岐を足すだけで済む。
  */
 export function VideoPlayer({
   streamVideoId,
@@ -28,6 +36,7 @@ export function VideoPlayer({
   positionSeconds: number;
 }) {
   const [playing, setPlaying] = useState(false);
+  const { tools } = useContent();
   const t = tools[tool];
   const percent =
     durationSeconds > 0
@@ -39,7 +48,7 @@ export function VideoPlayer({
       className="overflow-hidden rounded-card bg-player shadow-player"
       data-stream-video-id={streamVideoId}
     >
-      {/* ---- 映像ステージ（Phase 4 で <Stream /> に差し替え） ---- */}
+      {/* ---- 映像ステージ（Phase 4 で streamVideoId から <Stream /> に差し替え） ---- */}
       <div
         className="relative flex items-center justify-center"
         style={{

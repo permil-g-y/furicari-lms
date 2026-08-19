@@ -1,4 +1,4 @@
-import type { Category, Level, Tool, ToolKey, CategoryKey } from "@/lib/types";
+import type { Category, Tool, ToolKey, CategoryKey } from "@/lib/types";
 
 /** 全ページ共通のカテゴリ 6 分類 */
 export const categories: Category[] = [
@@ -79,31 +79,15 @@ export const toolFilterOrder: ToolKey[] = [
   "claude",
 ];
 
-/** コンテンツのタグに出る表記（初心者向け / 中級者向け / 上級者向け） */
-export function levelLabel(level: Level): string {
-  return { beginner: "初心者向け", intermediate: "中級者向け", advanced: "上級者向け" }[level];
-}
-
-/** 絞り込みフィルターに出る短い表記（初心者 / 中級 / 上級） */
-export function levelFilterLabel(level: Level): string {
-  return { beginner: "初心者", intermediate: "中級", advanced: "上級" }[level];
-}
-
-export const levelFilterOrder: Level[] = ["beginner", "intermediate", "advanced"];
-
-/** 秒 → "12:45" */
-export function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-/** 通し番号 → "05" */
-export function formatLessonNumber(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-/** 分秒指定を秒へ（データ定義を読みやすくするためのヘルパー） */
-export function ms(minutes: number, seconds: number): number {
-  return minutes * 60 + seconds;
-}
+/*
+ * 純粋なフォーマッタは src/lib/content/format.ts に一本化した。
+ * 既存の import を壊さないためここから re-export する。
+ */
+export {
+  formatDuration,
+  formatLessonNumber,
+  levelLabel,
+  levelFilterLabel,
+  levelFilterOrder,
+  ms,
+} from "@/lib/content/format";

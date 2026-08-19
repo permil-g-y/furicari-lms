@@ -1,15 +1,17 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { Icon } from "@/components/ui/Icon";
-import { getLesson, getPrimaryCourse, getResumeLessonId, todayLabel } from "@/lib/mock";
+import { getContent } from "@/lib/content/server";
 
 /**
  * 挨拶ヒーロー。
  * PC は 1fr 300px の 2 カラム、Mobile は日付 + 見出しの左カラムに 104px のイラストを添える。
  */
-export function HeroSection({ userName }: { userName: string }) {
-  const course = getPrimaryCourse();
-  const nextLesson = getLesson(getResumeLessonId(course));
+export async function HeroSection({ userName }: { userName: string }) {
+  const content = await getContent();
+  const { todayLabel } = content;
+  const course = content.getPrimaryCourse();
+  const nextLesson = content.getLesson(content.getResumeLessonId(course));
 
   return (
     <>

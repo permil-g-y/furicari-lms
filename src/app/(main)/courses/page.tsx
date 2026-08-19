@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react";
 import { CourseCardMobile, CourseCardPc } from "@/components/course/CourseCard";
 import { CategoryChips } from "@/components/ui/Filters";
-import { categories, courses } from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
 import type { CategoryKey } from "@/lib/types";
 
 /**
@@ -14,6 +14,7 @@ import type { CategoryKey } from "@/lib/types";
  * Mobile: カテゴリチップの横スクロール帯 → リード文 → カード 1 カラム
  */
 export default function CoursesPage() {
+  const { categories, courses } = useContent();
   const [category, setCategory] = useState<CategoryKey>("all");
 
   const filtered = useMemo(
@@ -21,7 +22,7 @@ export default function CoursesPage() {
       category === "all"
         ? courses
         : courses.filter((course) => course.category === category),
-    [category],
+    [category, courses],
   );
 
   return (

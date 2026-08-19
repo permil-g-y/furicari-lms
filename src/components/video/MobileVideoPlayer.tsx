@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { formatDuration, tools } from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { formatDuration } from "@/lib/content/format";
 import type { ToolKey } from "@/lib/types";
 
 /**
  * 動画閲覧 Mobile 版のプレイヤー（没入レイアウトの最上部）。
  * PC 版と同じく Phase 4 で Cloudflare Stream に差し替える前提の独立コンポーネント。
+ *
+ * ■ Phase 4 の差し替えポイント
+ *   `streamVideoId`（= Cloudflare Stream の Video UID）が渡ってきたら、
+ *   下の「映像ステージ」を <Stream src={streamVideoId} /> に置き換える。
+ *   現時点では全レッスンが `streamVideoId: undefined` なので、
+ *   値の有無にかかわらずダミープレイヤーを描画する（見た目を変えない）。
  */
 export function MobileVideoPlayer({
   streamVideoId,
@@ -28,6 +35,7 @@ export function MobileVideoPlayer({
   positionSeconds: number;
 }) {
   const [playing, setPlaying] = useState(false);
+  const { tools } = useContent();
   const t = tools[tool];
   const percent =
     durationSeconds > 0
@@ -36,7 +44,7 @@ export function MobileVideoPlayer({
 
   return (
     <div className="bg-player" data-stream-video-id={streamVideoId}>
-      {/* ---- 映像ステージ（Phase 4 で <Stream /> に差し替え） ---- */}
+      {/* ---- 映像ステージ（Phase 4 で streamVideoId から <Stream /> に差し替え） ---- */}
       <div
         className="relative flex items-center justify-center"
         style={{

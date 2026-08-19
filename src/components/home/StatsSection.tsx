@@ -1,5 +1,6 @@
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { learningStats } from "@/lib/mock";
+import { getContent } from "@/lib/content/server";
+import type { LearningStats } from "@/lib/types";
 import { splitAmount } from "./util";
 
 type StatItem = {
@@ -14,42 +15,42 @@ type StatItem = {
 };
 
 /** PC は 4 枚。Mobile（今週の学習）は「受講中コース」を除いた 3 枚。 */
-const items: StatItem[] = [
-  {
-    label: "学習済み動画",
-    amount: `${learningStats.completedLessons}本`,
-    icon: "icon-film",
-    iconSize: 22,
-    iconSizeSm: 19,
-    bg: "var(--color-brand-tint)",
-  },
-  {
-    label: "総学習時間",
-    amount: learningStats.totalWatchTimeLabel,
-    icon: "icon-cloud",
-    iconSize: 24,
-    iconSizeSm: 20,
-    bg: "var(--color-brand-tint)",
-  },
-  {
-    label: "受講中コース",
-    amount: `${learningStats.activeCourses}コース`,
-    icon: "icon-book",
-    iconSize: 22,
-    iconSizeSm: 19,
-    bg: "var(--color-brand-tint)",
-  },
-  {
-    label: "連続学習日数",
-    amount: `${learningStats.streakDays}日`,
-    icon: "icon-medal",
-    iconSize: 22,
-    iconSizeSm: 19,
-    bg: "var(--color-pink-bg2)",
-  },
-];
-
-const mobileItems = items.filter((i) => i.label !== "受講中コース");
+function buildItems(learningStats: LearningStats): StatItem[] {
+  return [
+    {
+      label: "学習済み動画",
+      amount: `${learningStats.completedLessons}本`,
+      icon: "icon-film",
+      iconSize: 22,
+      iconSizeSm: 19,
+      bg: "var(--color-brand-tint)",
+    },
+    {
+      label: "総学習時間",
+      amount: learningStats.totalWatchTimeLabel,
+      icon: "icon-cloud",
+      iconSize: 24,
+      iconSizeSm: 20,
+      bg: "var(--color-brand-tint)",
+    },
+    {
+      label: "受講中コース",
+      amount: `${learningStats.activeCourses}コース`,
+      icon: "icon-book",
+      iconSize: 22,
+      iconSizeSm: 19,
+      bg: "var(--color-brand-tint)",
+    },
+    {
+      label: "連続学習日数",
+      amount: `${learningStats.streakDays}日`,
+      icon: "icon-medal",
+      iconSize: 22,
+      iconSizeSm: 19,
+      bg: "var(--color-pink-bg2)",
+    },
+  ];
+}
 
 /** 数字は font-rounded の大きい文字、単位は小さいグレー文字 */
 function Amount({
@@ -91,7 +92,11 @@ function Amount({
  * 学習サマリー。
  * PC は 4 カラムのグリッド、Mobile は「今週の学習」の横スクロールカルーセル（3 枚）。
  */
-export function StatsSection() {
+export async function StatsSection() {
+  const content = await getContent();
+  const items = buildItems(content.learningStats);
+  const mobileItems = items.filter((i) => i.label !== "受講中コース");
+
   return (
     <>
       {/* ---- Mobile ---- */}

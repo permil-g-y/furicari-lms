@@ -1,5 +1,8 @@
+"use client";
+
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { learningStats } from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import type { LearningStats } from "@/lib/types";
 
 /**
  * 学習履歴のサマリーカード。
@@ -22,7 +25,7 @@ type StatItem = {
 };
 
 /** "14時間20分" → [{14, 時間}, {20, 分}] */
-function watchTimeParts(): ValuePart[] {
+function watchTimeParts(learningStats: LearningStats): ValuePart[] {
   const matched = learningStats.totalWatchTimeLabel.match(/(\d+)時間(\d+)分/);
   if (!matched) {
     return [{ num: learningStats.totalWatchTimeLabel, unit: "" }];
@@ -33,44 +36,49 @@ function watchTimeParts(): ValuePart[] {
   ];
 }
 
-export const historyStats: StatItem[] = [
-  {
-    key: "completed",
-    icon: "icon-film",
-    tint: "bg-brand-tint",
-    iconSizePc: 22,
-    iconSizeMobile: 19,
-    label: "学習済み動画",
-    parts: [{ num: String(learningStats.completedLessons), unit: "本" }],
-  },
-  {
-    key: "watch-time",
-    icon: "icon-cloud",
-    tint: "bg-brand-tint",
-    iconSizePc: 24,
-    iconSizeMobile: 20,
-    label: "総学習時間",
-    parts: watchTimeParts(),
-  },
-  {
-    key: "weekly",
-    icon: "icon-book",
-    tint: "bg-brand-tint",
-    iconSizePc: 22,
-    iconSizeMobile: 19,
-    label: "今週の学習",
-    parts: [{ num: String(learningStats.weeklyLessons), unit: "本" }],
-  },
-  {
-    key: "streak",
-    icon: "icon-medal",
-    tint: "bg-pink-bg2",
-    iconSizePc: 22,
-    iconSizeMobile: 19,
-    label: "連続学習日数",
-    parts: [{ num: String(learningStats.streakDays), unit: "日" }],
-  },
-];
+/** 学習履歴のサマリー 4 枚分のデータ（Content API の進捗から組み立てる） */
+export function useHistoryStats(): StatItem[] {
+  const { learningStats } = useContent();
+
+  return [
+    {
+      key: "completed",
+      icon: "icon-film",
+      tint: "bg-brand-tint",
+      iconSizePc: 22,
+      iconSizeMobile: 19,
+      label: "学習済み動画",
+      parts: [{ num: String(learningStats.completedLessons), unit: "本" }],
+    },
+    {
+      key: "watch-time",
+      icon: "icon-cloud",
+      tint: "bg-brand-tint",
+      iconSizePc: 24,
+      iconSizeMobile: 20,
+      label: "総学習時間",
+      parts: watchTimeParts(learningStats),
+    },
+    {
+      key: "weekly",
+      icon: "icon-book",
+      tint: "bg-brand-tint",
+      iconSizePc: 22,
+      iconSizeMobile: 19,
+      label: "今週の学習",
+      parts: [{ num: String(learningStats.weeklyLessons), unit: "本" }],
+    },
+    {
+      key: "streak",
+      icon: "icon-medal",
+      tint: "bg-pink-bg2",
+      iconSizePc: 22,
+      iconSizeMobile: 19,
+      label: "連続学習日数",
+      parts: [{ num: String(learningStats.streakDays), unit: "日" }],
+    },
+  ];
+}
 
 function Value({
   parts,

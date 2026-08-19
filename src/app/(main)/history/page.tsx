@@ -6,9 +6,9 @@ import { useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { CategoryChips } from "@/components/ui/Filters";
 import { HistoryRowMobile, HistoryRowPc } from "@/components/history/HistoryRow";
-import { StatCardMobile, StatCardPc, historyStats } from "@/components/history/StatCards";
+import { StatCardMobile, StatCardPc, useHistoryStats } from "@/components/history/StatCards";
 import { TimelineGroup } from "@/components/history/TimelineGroup";
-import { getHistoryGroups, getLessonStatus } from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
 
 type StatusFilter = "all" | "in_progress" | "completed";
 
@@ -27,19 +27,24 @@ const description = (
 );
 
 export default function HistoryPage() {
+  const content = useContent();
+  const historyStats = useHistoryStats();
   const [status, setStatus] = useState<StatusFilter>("all");
 
   const groups = useMemo(() => {
-    return getHistoryGroups()
+    return content
+      .getHistoryGroups()
       .map((group) => ({
         label: group.label,
         events:
           status === "all"
             ? group.events
-            : group.events.filter((e) => getLessonStatus(e.lessonId) === status),
+            : group.events.filter(
+                (e) => content.getLessonStatus(e.lessonId) === status,
+              ),
       }))
       .filter((group) => group.events.length > 0);
-  }, [status]);
+  }, [content, status]);
 
   const isEmpty = groups.length === 0;
 

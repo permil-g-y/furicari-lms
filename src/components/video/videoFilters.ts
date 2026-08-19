@@ -1,5 +1,12 @@
-import { courses, getCourse, getLessonStatus, tools } from "@/lib/mock";
-import type { CategoryKey, Lesson, Level, ToolKey } from "@/lib/types";
+import type {
+  CategoryKey,
+  Course,
+  Lesson,
+  LessonStatus,
+  Level,
+  Tool,
+  ToolKey,
+} from "@/lib/types";
 
 /* =========================================================================
    動画一覧の絞り込み / 並び替えロジック
@@ -25,6 +32,19 @@ export const watchFilterOptions: { key: WatchFilter; label: string }[] = [
   { key: "in_progress", label: "視聴中" },
   { key: "completed", label: "視聴済み" },
 ];
+
+/**
+ * 絞り込み / 並び替えに必要な教材データ。
+ * このモジュール自体はデータ源を知らない純粋なロジックに保ち、
+ * 呼び出し側（Content API）から必要なものだけを受け取る。
+ * ContentApi はこの形を構造的に満たすので、そのまま渡せる。
+ */
+export type VideoFilterContent = {
+  courses: Course[];
+  tools: Record<ToolKey, Tool>;
+  getCourse: (courseId: string) => Course | undefined;
+  getLessonStatus: (lessonId: string) => LessonStatus;
+};
 
 export type VideoFilterState = {
   category: CategoryKey;
@@ -60,22 +80,27 @@ export function toggleTool(toolKeys: ToolKey[], key: ToolKey): ToolKey[] {
     : [...toolKeys, key];
 }
 
-export function filterLessons(base: Lesson[], filter: VideoFilterState): Lesson[] {
+export function filterLessons(
+  base: Lesson[],
+  filter: VideoFilterState,
+  content: VideoFilterContent,
+): Lesson[] {
   const keyword = filter.keyword.trim().toLowerCase();
 
   return base.filter((lesson) => {
     if (filter.category !== "all" && lesson.category !== filter.category) return false;
     if (filter.toolKeys.length > 0 && !filter.toolKeys.includes(lesson.tool)) return false;
     if (filter.level !== null && lesson.level !== filter.level) return false;
-    if (filter.watch !== "all" && getLessonStatus(lesson.id) !== filter.watch) return false;
+    if (filter.watch !== "all" && content.getLessonStatus(lesson.id) !== filter.watch)
+      return false;
 
     if (keyword) {
-      const course = getCourse(lesson.courseId);
+      const course = content.getCourse(lesson.courseId);
       const haystack = [
         lesson.title,
         lesson.description ?? "",
         course?.title ?? "",
-        tools[lesson.tool].name,
+        content.tools[lesson.tool].name,
       ]
         .join(" ")
         .toLowerCase();
@@ -86,10 +111,14 @@ export function filterLessons(base: Lesson[], filter: VideoFilterState): Lesson[
   });
 }
 
-export function sortLessons(list: Lesson[], sort: SortKey): Lesson[] {
+export function sortLessons(
+  list: Lesson[],
+  sort: SortKey,
+  content: VideoFilterContent,
+): Lesson[] {
   if (sort === "recommended") return list;
 
-  const courseOrder = new Map(courses.map((c) => [c.id, c.sortOrder]));
+  const courseOrder = new Map(content.courses.map((c) => [c.id, c.sortOrder]));
   const indexed = list.map((lesson, index) => ({ lesson, index }));
 
   if (sort === "new") {

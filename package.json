@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "types:supabase": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > src/lib/supabase/database.types.ts",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "seed:generate": "tsx scripts/generate-content-seed.ts",
+    "db:verify": "node scripts/verify-content-db.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

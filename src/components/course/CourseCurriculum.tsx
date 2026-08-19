@@ -3,13 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PlayTriangle } from "@/components/ui/Button";
-import {
-  formatDuration,
-  formatLessonNumber,
-  getChapterStats,
-  getChaptersByCourse,
-  getLessonStatus,
-} from "@/lib/mock";
+import type { ContentApi } from "@/lib/content/api";
+import { useContent } from "@/lib/content/context";
+import { formatDuration, formatLessonNumber } from "@/lib/content/format";
 import type { Chapter, LessonStatus } from "@/lib/types";
 
 /* =========================================================================
@@ -22,8 +18,8 @@ import type { Chapter, LessonStatus } from "@/lib/types";
 type Variant = "pc" | "mobile";
 
 /** 章ヘッダの状態（番号タイル / 状態ピルの色分けに使う） */
-function chapterState(chapterId: string) {
-  const stats = getChapterStats(chapterId);
+function chapterState(content: ContentApi, chapterId: string) {
+  const stats = content.getChapterStats(chapterId);
   return {
     ...stats,
     /** 全完了 */
@@ -31,11 +27,11 @@ function chapterState(chapterId: string) {
   };
 }
 
-function useOpenChapters(chapters: Chapter[]) {
+function useOpenChapters(chapters: Chapter[], content: ContentApi) {
   const [open, setOpen] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     for (const chapter of chapters) {
-      if (getChapterStats(chapter.id).hasCurrent) initial[chapter.id] = true;
+      if (content.getChapterStats(chapter.id).hasCurrent) initial[chapter.id] = true;
     }
     // 視聴中の動画がないコース（未開始・完了）は全章が閉じた状態になってしまうため、
     // Chapter 1 だけ開いておく
@@ -106,14 +102,15 @@ function lessonBadge(status: LessonStatus): {
 }
 
 function CurriculumPc({ courseId }: { courseId: string }) {
-  const chapters = getChaptersByCourse(courseId);
-  const { open, toggle } = useOpenChapters(chapters);
+  const content = useContent();
+  const chapters = content.getChaptersByCourse(courseId);
+  const { open, toggle } = useOpenChapters(chapters, content);
 
   return (
     <div className="flex flex-col gap-3.5">
       {chapters.map((chapter) => {
         const { lessons, total, completedCount, hasCurrent, allDone, durationLabel } =
-          chapterState(chapter.id);
+          chapterState(content, chapter.id);
         const isOpen = !!open[chapter.id];
         const pill = statusPill(hasCurrent, allDone, completedCount, total);
 
@@ -165,7 +162,7 @@ function CurriculumPc({ courseId }: { courseId: string }) {
             {isOpen && (
               <div className="border-t border-surface-alt px-3 pb-3 pt-2">
                 {lessons.map((lesson) => {
-                  const status = getLessonStatus(lesson.id);
+                  const status = content.getLessonStatus(lesson.id);
                   const current = status === "in_progress";
                   const badge = lessonBadge(status);
 
@@ -232,14 +229,15 @@ function CurriculumPc({ courseId }: { courseId: string }) {
  * Mobile 版
  * ------------------------------------------------------------------ */
 function CurriculumMobile({ courseId }: { courseId: string }) {
-  const chapters = getChaptersByCourse(courseId);
-  const { open, toggle } = useOpenChapters(chapters);
+  const content = useContent();
+  const chapters = content.getChaptersByCourse(courseId);
+  const { open, toggle } = useOpenChapters(chapters, content);
 
   return (
     <div className="flex flex-col gap-2.5 px-4">
       {chapters.map((chapter) => {
         const { lessons, total, completedCount, hasCurrent, allDone } =
-          chapterState(chapter.id);
+          chapterState(content, chapter.id);
         const isOpen = !!open[chapter.id];
 
         return (
@@ -284,7 +282,7 @@ function CurriculumMobile({ courseId }: { courseId: string }) {
             {isOpen && (
               <div className="flex flex-col gap-0.5 border-t border-surface-alt px-2 pb-2.5 pt-1.5">
                 {lessons.map((lesson) => {
-                  const status = getLessonStatus(lesson.id);
+                  const status = content.getLessonStatus(lesson.id);
                   const current = status === "in_progress";
                   const finished = status === "completed";
                   const badge = lessonBadge(status);

@@ -3,14 +3,9 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import {
-  formatDuration,
-  formatLessonNumber,
-  getChaptersByCourse,
-  getCoursePercent,
-  getLessonStatus,
-  getLessonsByChapter,
-} from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import type { ContentApi } from "@/lib/content/api";
+import { formatDuration, formatLessonNumber } from "@/lib/content/format";
 import type { Course, Lesson } from "@/lib/types";
 
 type ChapterBlock = {
@@ -21,11 +16,15 @@ type ChapterBlock = {
   lessons: Lesson[];
 };
 
-function buildChapters(courseId: string, currentLessonId: string): ChapterBlock[] {
-  return getChaptersByCourse(courseId).map((chapter) => {
-    const lessons = getLessonsByChapter(chapter.id);
+function buildChapters(
+  content: ContentApi,
+  courseId: string,
+  currentLessonId: string,
+): ChapterBlock[] {
+  return content.getChaptersByCourse(courseId).map((chapter) => {
+    const lessons = content.getLessonsByChapter(chapter.id);
     const completedCount = lessons.filter(
-      (l) => getLessonStatus(l.id) === "completed",
+      (l) => content.getLessonStatus(l.id) === "completed",
     ).length;
     const allDone = lessons.length > 0 && completedCount === lessons.length;
     const hasCurrent = lessons.some((l) => l.id === currentLessonId);
@@ -51,6 +50,8 @@ const pcBadgeClass: Record<ChapterBlock["badgeTone"], string> = {
 
 /** 進捗ヘッダ（PC の aside 上部 / Mobile のカリキュラムタブ先頭で共通） */
 function ProgressSummary({ course }: { course: Course }) {
+  const { getCoursePercent } = useContent();
+
   return (
     <>
       <div className="flex items-baseline justify-between">
@@ -77,7 +78,8 @@ export function CurriculumPanel({
   course: Course;
   currentLessonId: string;
 }) {
-  const chapters = buildChapters(course.id, currentLessonId);
+  const content = useContent();
+  const chapters = buildChapters(content, course.id, currentLessonId);
 
   return (
     <aside className="sticky top-[100px] flex max-h-[calc(100vh-140px)] flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card">
@@ -109,7 +111,7 @@ export function CurriculumPanel({
 
             {chapter.lessons.map((lesson) => {
               const current = lesson.id === currentLessonId;
-              const done = getLessonStatus(lesson.id) === "completed";
+              const done = content.getLessonStatus(lesson.id) === "completed";
               return (
                 <Link
                   key={lesson.id}
@@ -178,7 +180,8 @@ export function MobileCurriculum({
   course: Course;
   currentLessonId: string;
 }) {
-  const chapters = buildChapters(course.id, currentLessonId);
+  const content = useContent();
+  const chapters = buildChapters(content, course.id, currentLessonId);
 
   return (
     <div className="flex flex-col gap-4">
@@ -202,7 +205,7 @@ export function MobileCurriculum({
           <div className="flex flex-col gap-0.5 rounded-18 border border-line bg-surface p-1.5 shadow-card">
             {chapter.lessons.map((lesson) => {
               const current = lesson.id === currentLessonId;
-              const done = getLessonStatus(lesson.id) === "completed";
+              const done = content.getLessonStatus(lesson.id) === "completed";
               return (
                 <Link
                   key={lesson.id}

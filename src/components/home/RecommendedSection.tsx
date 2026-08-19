@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeading } from "@/components/ui/ProgressBar";
 import { Tag } from "@/components/ui/Tag";
-import { getCourses, levelLabel, recommendedCourseIds } from "@/lib/mock";
+import { levelLabel } from "@/lib/content/format";
+import { getContent } from "@/lib/content/server";
 import type { Course } from "@/lib/types";
 
 /** コースカバー（画像ではなくアイコン or 文字 + パステル背景） */
@@ -46,10 +47,11 @@ function Cover({
  * あなたにおすすめのコース。
  * PC は 4 カラムのグリッド、Mobile は 220px カードの横スクロールカルーセル（2 件）。
  */
-export function RecommendedSection() {
-  const courses = getCourses(recommendedCourseIds);
+export async function RecommendedSection() {
+  const content = await getContent();
+  const courses = content.getCourses(content.recommendedCourseIds);
   // Claude Design の Mobile 版に出ている 2 件（CapCut 実践 / AI動画編集 効率化）
-  const mobileCourses = getCourses(["capcut-practice", "ai-editing"]);
+  const mobileCourses = content.getCourses(["capcut-practice", "ai-editing"]);
 
   return (
     <>

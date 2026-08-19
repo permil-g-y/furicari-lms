@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  categories,
-  levelFilterLabel,
-  levelFilterOrder,
-  toolFilterOrder,
-  tools,
-} from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { levelFilterLabel, levelFilterOrder } from "@/lib/content/format";
 import type { CategoryKey, Level } from "@/lib/types";
 import {
   toggleTool,
@@ -76,6 +71,8 @@ export function VideoFilterSheet({
   onClear: () => void;
   onClose: () => void;
 }) {
+  const { categories, toolFilterOrder, tools } = useContent();
+
   // シートを開いている間は背面をスクロールさせない
   useEffect(() => {
     if (!open) return;

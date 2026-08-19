@@ -1,8 +1,11 @@
+"use client";
+
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CourseStatusBadge, Tag } from "@/components/ui/Tag";
-import { getCoursePercent, levelLabel } from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { levelLabel } from "@/lib/content/format";
 import type { Course } from "@/lib/types";
 
 /* =========================================================================
@@ -39,7 +42,7 @@ const OUTLINE_CTA =
  * PC 版カード
  * ------------------------------------------------------------------ */
 export function CourseCardPc({ course }: { course: Course }) {
-  const percent = getCoursePercent(course);
+  const percent = useContent().getCoursePercent(course);
   const learning = course.status === "in_progress";
   const done = course.status === "completed";
   const href = `/courses/${course.id}`;
@@ -144,7 +147,7 @@ export function CourseCardPc({ course }: { course: Course }) {
  * Mobile 版カード（56px のアイコンタイル + 右に状態ピル / タイトル / タグ）
  * ------------------------------------------------------------------ */
 export function CourseCardMobile({ course }: { course: Course }) {
-  const percent = getCoursePercent(course);
+  const percent = useContent().getCoursePercent(course);
   const learning = course.status === "in_progress";
   const done = course.status === "completed";
   const href = `/courses/${course.id}`;

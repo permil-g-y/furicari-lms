@@ -4,16 +4,8 @@ import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Tag } from "@/components/ui/Tag";
 import { VideoThumbnail } from "@/components/video/VideoThumbnail";
-import {
-  formatLessonNumber,
-  getChapter,
-  getCoursePercent,
-  getLesson,
-  getLessonPercent,
-  getPrimaryCourse,
-  getResumeLessonId,
-  levelLabel,
-} from "@/lib/mock";
+import { formatLessonNumber, levelLabel } from "@/lib/content/format";
+import { getContent } from "@/lib/content/server";
 import { remainingLabel } from "./util";
 
 /** アウトラインの CTA（Reference は #BFDCFA 枠 + #2C7BE0 文字。Button の outline とは初期配色が違う） */
@@ -23,13 +15,14 @@ const outlineCta = "border-brand-tint2! text-brand-deep!";
  * 現在学習中のコース。TOP で最も強い CTA ブロック。
  * PC は「情報カラム + モックプレイヤー」の 2 カラム、Mobile は縦積みの 1 枚カード。
  */
-export function CurrentCourseSection() {
-  const course = getPrimaryCourse();
-  const lessonId = getResumeLessonId(course);
-  const lesson = getLesson(lessonId);
-  const chapter = lesson ? getChapter(lesson.chapterId) : undefined;
-  const percent = getCoursePercent(course);
-  const lessonPercent = getLessonPercent(lessonId);
+export async function CurrentCourseSection() {
+  const content = await getContent();
+  const course = content.getPrimaryCourse();
+  const lessonId = content.getResumeLessonId(course);
+  const lesson = content.getLesson(lessonId);
+  const chapter = lesson ? content.getChapter(lesson.chapterId) : undefined;
+  const percent = content.getCoursePercent(course);
+  const lessonPercent = content.getLessonPercent(lessonId);
   const restLessons = course.totalLessons - course.completedLessons;
   const watchHref = `/watch/${lessonId}`;
   const courseHref = `/courses/${course.id}`;
@@ -74,7 +67,7 @@ export function CurrentCourseSection() {
                   className="absolute bottom-2.5 right-2.5 flex items-center rounded-6 text-115 text-white"
                   style={{ height: 22, paddingInline: 7, background: "rgba(16,29,51,.72)" }}
                 >
-                  {remainingLabel(lessonId)}
+                  {remainingLabel(content, lessonId)}
                 </span>
               </VideoThumbnail>
             </Link>
@@ -179,7 +172,7 @@ export function CurrentCourseSection() {
                 <span className="truncate text-15 font-bold text-ink">{lessonTitle}</span>
               </div>
               <span className="ml-auto shrink-0 text-13 text-ink3">
-                {remainingLabel(lessonId)}
+                {remainingLabel(content, lessonId)}
               </span>
             </Link>
 

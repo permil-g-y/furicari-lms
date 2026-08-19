@@ -2,30 +2,27 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CourseStatusBadge, Tag } from "@/components/ui/Tag";
-import {
-  formatLessonNumber,
-  getChapter,
-  getCoursePercent,
-  getLesson,
-  getResumeLessonId,
-} from "@/lib/mock";
+import { formatLessonNumber } from "@/lib/content/format";
+import { getContent } from "@/lib/content/server";
 import type { Course } from "@/lib/types";
 
 /**
  * マイページ「現在学習中のコース」のカード。
  * Claude Design では 1 枚目だけ枠 #BFDCFA + 濃い影 + 塗りボタンで強調されている。
  */
-export function InProgressCourseCard({
+export async function InProgressCourseCard({
   course,
   highlight = false,
 }: {
   course: Course;
   highlight?: boolean;
 }) {
-  const percent = getCoursePercent(course);
-  const nextLessonId = getResumeLessonId(course);
-  const lesson = getLesson(nextLessonId);
-  const chapter = lesson ? getChapter(lesson.chapterId) : undefined;
+  const content = await getContent();
+
+  const percent = content.getCoursePercent(course);
+  const nextLessonId = content.getResumeLessonId(course);
+  const lesson = content.getLesson(nextLessonId);
+  const chapter = lesson ? content.getChapter(lesson.chapterId) : undefined;
 
   return (
     <article

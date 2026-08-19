@@ -1,16 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Tag } from "@/components/ui/Tag";
 import { VideoThumbnail } from "@/components/video/VideoThumbnail";
-import {
-  formatDuration,
-  getChapter,
-  getCourse,
-  getLesson,
-  getLessonPercent,
-  getLessonStatus,
-  getProgress,
-} from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { formatDuration } from "@/lib/content/format";
+import type { ContentApi } from "@/lib/content/api";
 
 /**
  * 学習履歴の 1 行。
@@ -19,15 +15,15 @@ import {
  * 「動画一覧 - Mobile」の横長リストカード（152px サムネ + 右カラム）を基準にする。
  */
 
-function rowData(lessonId: string) {
-  const lesson = getLesson(lessonId);
+function rowData(content: ContentApi, lessonId: string) {
+  const lesson = content.getLesson(lessonId);
   if (!lesson) return null;
 
-  const course = getCourse(lesson.courseId);
-  const chapter = getChapter(lesson.chapterId);
-  const status = getLessonStatus(lesson.id);
-  const percent = getLessonPercent(lesson.id);
-  const progress = getProgress(lesson.id);
+  const course = content.getCourse(lesson.courseId);
+  const chapter = content.getChapter(lesson.chapterId);
+  const status = content.getLessonStatus(lesson.id);
+  const percent = content.getLessonPercent(lesson.id);
+  const progress = content.getProgress(lesson.id);
   const done = status === "completed";
 
   return {
@@ -80,7 +76,8 @@ export function HistoryRowPc({
   lessonId: string;
   viewedAtLabel: string;
 }) {
-  const data = rowData(lessonId);
+  const content = useContent();
+  const data = rowData(content, lessonId);
   if (!data) return null;
   const { lesson, status, percent, done, href, courseLine, positionLabel } = data;
 
@@ -150,7 +147,8 @@ export function HistoryRowMobile({
   lessonId: string;
   viewedAtLabel: string;
 }) {
-  const data = rowData(lessonId);
+  const content = useContent();
+  const data = rowData(content, lessonId);
   if (!data) return null;
   const { lesson, status, percent, done, href, courseLine, positionLabel } = data;
 

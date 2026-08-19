@@ -6,15 +6,8 @@ import Link from "next/link";
 import { LessonStatusBadge, Tag } from "@/components/ui/Tag";
 import { VideoThumbnail } from "./VideoThumbnail";
 import { useFavorites } from "@/lib/favorites-context";
-import {
-  categoryLabel,
-  formatDuration,
-  getChapter,
-  getCourse,
-  getLessonPercent,
-  getLessonStatus,
-  levelLabel,
-} from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { formatDuration, levelLabel } from "@/lib/content/format";
 import type { Lesson } from "@/lib/types";
 
 /** ハートボタン（お気に入り済みは opacity 1、未登録は .4） */
@@ -73,6 +66,8 @@ export function VideoCardGrid({
   showStatus?: boolean;
   footer?: React.ReactNode;
 }) {
+  const { categoryLabel, getChapter, getCourse, getLessonPercent, getLessonStatus } =
+    useContent();
   const status = getLessonStatus(lesson.id);
   const percent = getLessonPercent(lesson.id);
   const course = getCourse(lesson.courseId);
@@ -137,6 +132,7 @@ export function VideoCardList({
   /** 省略時は「コース名 ・ 12:45」 */
   metaLine?: string;
 }) {
+  const { getCourse, getLessonPercent, getLessonStatus } = useContent();
   const status = getLessonStatus(lesson.id);
   const percent = getLessonPercent(lesson.id);
   const course = getCourse(lesson.courseId);

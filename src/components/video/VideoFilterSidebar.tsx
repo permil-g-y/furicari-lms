@@ -3,13 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { Icon } from "@/components/ui/Icon";
-import {
-  categories,
-  levelFilterLabel,
-  levelFilterOrder,
-  toolFilterOrder,
-  tools,
-} from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
+import { levelFilterLabel, levelFilterOrder } from "@/lib/content/format";
 import type { CategoryKey, Level, ToolKey } from "@/lib/types";
 import {
   toggleTool,
@@ -64,6 +59,8 @@ export function VideoFilterSidebar({
   onChange: (patch: Partial<VideoFilterState>) => void;
   onClear: () => void;
 }) {
+  const { categories, toolFilterOrder, tools } = useContent();
+
   return (
     <aside className="sticky top-[100px] flex flex-col gap-4">
       <div className="flex flex-col gap-[26px] rounded-card border border-line bg-surface px-[22px] py-6 shadow-card">

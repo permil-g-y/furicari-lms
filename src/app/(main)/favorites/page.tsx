@@ -8,55 +8,55 @@ import { Icon } from "@/components/ui/Icon";
 import { CategoryChips, SearchBox, SortSelect } from "@/components/ui/Filters";
 import { VideoCardGrid, VideoCardList } from "@/components/video/VideoCard";
 import { useFavorites } from "@/lib/favorites-context";
-import {
-  categories,
-  getChapter,
-  getCourse,
-  getFavoriteLessons,
-  getLessons,
-} from "@/lib/mock";
+import { useContent } from "@/lib/content/context";
 import type { CategoryKey, Lesson } from "@/lib/types";
 
 /** 並び替えは Claude Design 上「保存日が新しい順」の 1 種類のみ */
 const sortOptions = [{ key: "recent" as const, label: "保存日が新しい順" }];
 
-/** PC カードの「コース名 ・ Chapter n」行と同じ内容を Mobile のメタ行にも出す */
-function courseLine(lesson: Lesson): string {
-  const course = getCourse(lesson.courseId);
-  const chapter = getChapter(lesson.chapterId);
-  if (!course) return "";
-  return `${course.title}${chapter ? ` ・ Chapter ${chapter.number}` : ""}`;
-}
-
 export default function FavoritesPage() {
+  const content = useContent();
+  const categories = content.categories;
   const { lessonIds } = useFavorites();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryKey>("all");
   const [sort, setSort] = useState<"recent">("recent");
+
+  /** PC カードの「コース名 ・ Chapter n」行と同じ内容を Mobile のメタ行にも出す */
+  const courseLine = (lesson: Lesson): string => {
+    const course = content.getCourse(lesson.courseId);
+    const chapter = content.getChapter(lesson.chapterId);
+    if (!course) return "";
+    return `${course.title}${chapter ? ` ・ Chapter ${chapter.number}` : ""}`;
+  };
 
   /**
    * Claude Design の並び順（favoriteLessonIds）を保ちつつ、
    * ハートを外した動画はリストから消し、他ページで追加された動画は末尾に足す。
    */
   const favorites = useMemo<Lesson[]>(() => {
-    const base = getFavoriteLessons().filter((l) => lessonIds.includes(l.id));
+    const base = content
+      .getFavoriteLessons()
+      .filter((l) => lessonIds.includes(l.id));
     const baseIds = new Set(base.map((l) => l.id));
-    const added = getLessons(lessonIds.filter((id) => !baseIds.has(id)));
+    const added = content.getLessons(
+      lessonIds.filter((id) => !baseIds.has(id)),
+    );
     return [...base, ...added];
-  }, [lessonIds]);
+  }, [content, lessonIds]);
 
   const lessons = useMemo(() => {
     const q = query.trim().toLowerCase();
     return favorites.filter((lesson) => {
       if (category !== "all" && lesson.category !== category) return false;
       if (!q) return true;
-      const course = getCourse(lesson.courseId);
+      const course = content.getCourse(lesson.courseId);
       return [lesson.title, lesson.description ?? "", course?.title ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(q);
     });
-  }, [favorites, category, query]);
+  }, [content, favorites, category, query]);
 
   const isFiltered = query.trim() !== "" || category !== "all";
 

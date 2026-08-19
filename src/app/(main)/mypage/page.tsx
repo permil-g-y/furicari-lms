@@ -6,7 +6,8 @@ import { StatCard, StatUnit } from "@/components/mypage/StatCard";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Tag } from "@/components/ui/Tag";
-import { currentUser, getInProgressCourses, learningStats } from "@/lib/mock";
+import { currentUser } from "@/lib/mock";
+import { getContent } from "@/lib/content/server";
 import { requireUser } from "@/lib/auth/user";
 
 /** 「14時間20分」を 14 / 20 に分解する（分解できない場合はそのまま出す） */
@@ -46,8 +47,10 @@ function MyPageHeading({
 
 export default async function MyPage() {
   const user = await requireUser();
+  const content = await getContent();
 
-  const inProgress = getInProgressCourses();
+  const learningStats = content.learningStats;
+  const inProgress = content.getInProgressCourses();
   const watchTime = splitWatchTime(learningStats.totalWatchTimeLabel);
 
   return (

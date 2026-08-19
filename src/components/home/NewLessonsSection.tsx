@@ -4,15 +4,18 @@ import { SectionHeading } from "@/components/ui/ProgressBar";
 import { Tag } from "@/components/ui/Tag";
 import { FavoriteHeart } from "@/components/video/VideoCard";
 import { VideoThumbnail } from "@/components/video/VideoThumbnail";
-import { getLessons, levelLabel, newLessonIds, tools } from "@/lib/mock";
+import { levelLabel } from "@/lib/content/format";
+import { getContent } from "@/lib/content/server";
 import { formatDate, isNewLesson } from "./util";
 
 /**
  * 新着動画（PC のみ。Claude Design の Mobile 版にはこのセクションが無い）。
  * 進捗オーバーレイは付けず、NEW バッジと公開日・お気に入りを出す。
  */
-export function NewLessonsSection() {
-  const lessons = getLessons(newLessonIds);
+export async function NewLessonsSection() {
+  const content = await getContent();
+  const { tools } = content;
+  const lessons = content.getLessons(content.newLessonIds);
 
   return (
     <section className="hidden flex-col gap-5 lg:flex">
@@ -35,7 +38,7 @@ export function NewLessonsSection() {
                 scale="md"
                 showPlay={false}
               >
-                {isNewLesson(lesson.publishedAt) && (
+                {isNewLesson(content.todayLabel, lesson.publishedAt) && (
                   <span
                     className="absolute right-2.5 top-2.5 flex items-center rounded-6 bg-alert text-105 font-bold tracking-[.06em] text-white"
                     style={{ height: 22, paddingInline: 8 }}
