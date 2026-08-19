@@ -1,13 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { Icon } from "@/components/ui/Icon";
-import { currentUser, getLesson, getPrimaryCourse, getResumeLessonId, todayLabel } from "@/lib/mock";
+import { getLesson, getPrimaryCourse, getResumeLessonId, todayLabel } from "@/lib/mock";
 
 /**
  * 挨拶ヒーロー。
  * PC は 1fr 300px の 2 カラム、Mobile は日付 + 見出しの左カラムに 104px のイラストを添える。
  */
-export function HeroSection() {
+export function HeroSection({ userName }: { userName: string }) {
   const course = getPrimaryCourse();
   const nextLesson = getLesson(getResumeLessonId(course));
 
@@ -20,7 +20,7 @@ export function HeroSection() {
           <h1 className="font-rounded text-21 font-bold leading-[1.45] text-ink">
             おかえりなさい、
             <br />
-            {currentUser.name}さん！
+            {userName}さん！
           </h1>
         </div>
         <img
@@ -39,7 +39,7 @@ export function HeroSection() {
             <span className="text-13 font-medium tracking-[.04em] text-ink3">{todayLabel}</span>
           </div>
           <h1 className="font-rounded text-28 font-bold leading-[1.45] text-ink">
-            おかえりなさい、{currentUser.name}さん！
+            おかえりなさい、{userName}さん！
           </h1>
           <p className="text-155 leading-[1.8] text-ink-sub2">
             今日も少しずつスキルアップしましょう。

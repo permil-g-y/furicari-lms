@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Tag } from "@/components/ui/Tag";
 import { currentUser, getInProgressCourses, learningStats } from "@/lib/mock";
+import { requireUser } from "@/lib/auth/user";
 
 /** 「14時間20分」を 14 / 20 に分解する（分解できない場合はそのまま出す） */
 function splitWatchTime(label: string): { hours: string; minutes: string } | null {
@@ -43,7 +44,9 @@ function MyPageHeading({
   );
 }
 
-export default function MyPage() {
+export default async function MyPage() {
+  const user = await requireUser();
+
   const inProgress = getInProgressCourses();
   const watchTime = splitWatchTime(learningStats.totalWatchTimeLabel);
 
@@ -59,27 +62,37 @@ export default function MyPage() {
             className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full border border-brand-tint4 bg-surface lg:h-24 lg:w-24"
             style={{ boxShadow: "0 4px 12px rgba(59,144,245,.1)" }}
           >
-            <Icon name={currentUser.avatarIcon} size={40} className="lg:hidden" />
-            <Icon
-              name={currentUser.avatarIcon}
-              size={52}
-              className="hidden lg:block"
-            />
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt=""
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              <>
+                <Icon name={currentUser.avatarIcon} size={40} className="lg:hidden" />
+                <Icon
+                  name={currentUser.avatarIcon}
+                  size={52}
+                  className="hidden lg:block"
+                />
+              </>
+            )}
           </span>
           <div className="flex min-w-0 flex-col gap-1.5 lg:gap-2">
             <div className="flex items-center gap-2.5">
-              <h1 className="font-rounded text-20 font-bold text-ink lg:text-26">
-                {currentUser.name}
+              <h1 className="min-w-0 truncate font-rounded text-20 font-bold text-ink lg:text-26">
+                {user.displayName}
               </h1>
               <Tag tone="solid" height={26} paddingX={12}>
                 受講中
               </Tag>
             </div>
             <span className="truncate text-125 text-ink-sub2 lg:text-14">
-              {currentUser.email}
+              {user.email}
             </span>
             <span className="text-115 text-ink4 lg:text-125">
-              {currentUser.joinedLabel} ・ 連続学習{learningStats.streakDays}日目
+              {user.joinedLabel} ・ 連続学習{learningStats.streakDays}日目
             </span>
           </div>
         </div>
@@ -152,7 +165,11 @@ export default function MyPage() {
       <section className="grid grid-cols-1 items-start gap-8 px-4 lg:grid-cols-[1fr_380px] lg:gap-6 lg:px-0">
         <div className="flex flex-col gap-3 lg:gap-5">
           <MyPageHeading icon="icon-user" title="アカウント設定" />
-          <AccountSettings />
+          <AccountSettings
+            displayName={user.displayName}
+            email={user.email}
+            notificationEnabled={user.notificationEnabled}
+          />
         </div>
 
         <div className="flex flex-col gap-3 lg:gap-5">

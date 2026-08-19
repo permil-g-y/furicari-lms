@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Footer } from "./Footer";
-import { Header, type PcNavKey } from "./Header";
+import { Header, type HeaderUser, type PcNavKey } from "./Header";
 import { MobileHeader } from "./MobileHeader";
 import { MobileTabBar, type MobileTabKey } from "./MobileTabBar";
 
@@ -84,7 +84,13 @@ function resolveShell(pathname: string): ShellConfig {
   return { pcNav: null, mobileHeader: {}, mobileTab: "none" };
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  user,
+  children,
+}: {
+  user: HeaderUser;
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const config = resolveShell(pathname);
 
@@ -95,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ラッパー div（＝ヘッダーと同じ高さ）で囲むと固定されずに流れてしまう。
         PC/Mobile の出し分けは Header 側の hidden lg:block が持っている。
       */}
-      <Header active={config.pcNav} />
+      <Header active={config.pcNav} user={user} />
 
       {config.mobileHeader && (
         <div className="lg:hidden">
