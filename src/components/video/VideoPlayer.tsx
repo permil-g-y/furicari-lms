@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useContent } from "@/lib/content/context";
 import { formatDuration } from "@/lib/content/format";
+import { StreamStage } from "./StreamStage";
+import type { PlaybackSource } from "@/lib/stream/types";
 import type { ToolKey } from "@/lib/types";
 
 /**
@@ -11,24 +13,28 @@ import type { ToolKey } from "@/lib/types";
  * Phase 4 で Cloudflare Stream の埋め込みに差し替える想定のため、
  * 「16:9 のステージ」と「コントロールバー」をこのコンポーネントに閉じている。
  *
- * ■ Phase 4 の差し替えポイント
- *   `streamVideoId`（= Cloudflare Stream の Video UID）が渡ってきたら、
- *   下の「映像ステージ」を <Stream src={streamVideoId} /> に置き換え、
- *   コントロールバーをそのプレイヤー API に接続する。
- *   現時点では全レッスンが `streamVideoId: undefined` なので、
- *   値の有無にかかわらずダミープレイヤーを描画する（見た目を変えない）。
- *   Phase 4 では「streamVideoId があれば <Stream />、なければ従来のステージ」
- *   という分岐を足すだけで済む。
+ * ■ Phase 4
+ *   サーバーが発行した署名付き再生ソース（playback）が
+ *   cloudflare-stream のときだけ Cloudflare 公式プレイヤーを描画する。
+ *   stream_video_id が NULL のレッスンは従来どおりダミープレイヤーのまま。
+ *
+ *   本物のプレイヤーは自前のコントロールを持つため、その場合のみ
+ *   下のダミーのコントロールバーは描画しない
+ *   （操作できない偽のバーを残すと誤解を招くため）。
+ *   Phase 1 のコントロールデザインへ寄せるのは後続 Phase。
  */
 export function VideoPlayer({
   streamVideoId,
+  playback,
   tool,
   topRightLabel,
   durationSeconds,
   positionSeconds,
 }: {
-  /** Phase 4 で Cloudflare Stream の Video UID を受け取る */
+  /** Cloudflare Stream の Video UID（DB 由来。NULL ならダミー） */
   streamVideoId?: string;
+  /** サーバーが発行した署名付き再生ソース */
+  playback?: PlaybackSource;
   tool: ToolKey;
   /** 右上のピル（例「Chapter 2 ・ 05 / 18」） */
   topRightLabel: string;
@@ -42,6 +48,15 @@ export function VideoPlayer({
     durationSeconds > 0
       ? Math.min(100, Math.round((positionSeconds / durationSeconds) * 100))
       : 0;
+
+  // 本物の動画がある / 発行に失敗した場合。外枠・角丸・16:9 はダミーと同一。
+  if (playback && playback.kind !== "placeholder") {
+    return (
+      <div className="overflow-hidden rounded-card bg-player shadow-player">
+        <StreamStage playback={playback} title={topRightLabel} />
+      </div>
+    );
+  }
 
   return (
     <div

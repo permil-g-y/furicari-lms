@@ -19,14 +19,23 @@ export type PlaybackSource =
       kind: "cloudflare-stream";
       /** lessons.stream_video_id */
       videoId: string;
-      /** 署名付き再生トークン。受講生本人だけが再生できるようにする */
-      token: string;
-      /** HLS マニフェスト URL（token 込み） */
+      /**
+       * Cloudflare 公式プレイヤーの埋め込み URL（署名付きトークン込み）。
+       * URL のパス部分が Video UID ではなく **トークン** になっている点が肝で、
+       * これにより Require Signed URLs が有効な動画を再生できる。
+       */
+      iframeUrl: string;
+      /** HLS マニフェスト URL（自前プレイヤーへ寄せるとき用。トークン込み） */
       hlsUrl: string;
-      /** サムネイル URL */
+      /** サムネイル URL（トークン込み） */
       thumbnailUrl: string;
       /** token の有効期限（ISO 8601） */
       expiresAt: string;
+    }
+  | {
+      kind: "error";
+      /** 再生ソースの発行に失敗した。ページ全体は壊さず、その旨だけ出す */
+      reason: string;
     };
 
 /**

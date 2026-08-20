@@ -4,28 +4,32 @@ import Link from "next/link";
 import { useState } from "react";
 import { useContent } from "@/lib/content/context";
 import { formatDuration } from "@/lib/content/format";
+import { StreamStage } from "./StreamStage";
+import type { PlaybackSource } from "@/lib/stream/types";
 import type { ToolKey } from "@/lib/types";
 
 /**
  * 動画閲覧 Mobile 版のプレイヤー（没入レイアウトの最上部）。
  * PC 版と同じく Phase 4 で Cloudflare Stream に差し替える前提の独立コンポーネント。
  *
- * ■ Phase 4 の差し替えポイント
- *   `streamVideoId`（= Cloudflare Stream の Video UID）が渡ってきたら、
- *   下の「映像ステージ」を <Stream src={streamVideoId} /> に置き換える。
- *   現時点では全レッスンが `streamVideoId: undefined` なので、
- *   値の有無にかかわらずダミープレイヤーを描画する（見た目を変えない）。
+ * ■ Phase 4
+ *   署名付き再生ソースがあるときだけ Cloudflare 公式プレイヤーを描画する。
+ *   その場合も、Mobile の導線が壊れないよう
+ *   「戻る ←」と「05 / 18」のオーバーレイは映像の上に残す。
  */
 export function MobileVideoPlayer({
   streamVideoId,
+  playback,
   tool,
   backHref,
   indexLabel,
   durationSeconds,
   positionSeconds,
 }: {
-  /** Phase 4 で Cloudflare Stream の Video UID を受け取る */
+  /** Cloudflare Stream の Video UID（DB 由来。NULL ならダミー） */
   streamVideoId?: string;
+  /** サーバーが発行した署名付き再生ソース */
+  playback?: PlaybackSource;
   tool: ToolKey;
   /** 左上の「←」の遷移先（コース詳細） */
   backHref: string;
@@ -41,6 +45,30 @@ export function MobileVideoPlayer({
     durationSeconds > 0
       ? Math.min(100, Math.round((positionSeconds / durationSeconds) * 100))
       : 0;
+
+  // 本物の動画がある / 発行に失敗した場合。
+  // 戻る導線と通し番号のピルは映像の上に重ねて維持する。
+  if (playback && playback.kind !== "placeholder") {
+    return (
+      <div className="relative bg-player">
+        <StreamStage playback={playback} title={indexLabel} />
+        <Link
+          href={backHref}
+          aria-label="コースへ戻る"
+          className="absolute left-2.5 top-2.5 z-10 flex h-[34px] w-[34px] items-center justify-center rounded-full text-16 text-white"
+          style={{ background: "rgba(16,29,51,.5)" }}
+        >
+          ←
+        </Link>
+        <span
+          className="absolute right-2.5 top-2.5 z-10 flex h-[26px] items-center rounded-full px-2.5 text-11 font-bold text-white"
+          style={{ background: "rgba(16,29,51,.5)" }}
+        >
+          {indexLabel}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-player" data-stream-video-id={streamVideoId}>

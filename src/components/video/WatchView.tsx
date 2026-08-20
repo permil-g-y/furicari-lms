@@ -15,9 +15,17 @@ import {
 import type { Lesson } from "@/lib/types";
 import { MobileVideoPlayer } from "./MobileVideoPlayer";
 import { VideoPlayer } from "./VideoPlayer";
+import type { PlaybackSource } from "@/lib/stream/types";
 import { CurriculumPanel, MobileCurriculum } from "./WatchCurriculum";
 
-export function WatchView({ lessonId }: { lessonId: string }) {
+export function WatchView({
+  lessonId,
+  playback,
+}: {
+  lessonId: string;
+  /** サーバーが発行した署名付き再生ソース（Phase 4） */
+  playback?: PlaybackSource;
+}) {
   const content = useContent();
   const { categoryLabel, tools } = content;
   const lesson = content.getLesson(lessonId)!;
@@ -69,6 +77,7 @@ export function WatchView({ lessonId }: { lessonId: string }) {
       <div className="lg:hidden">
         <MobileVideoPlayer
           streamVideoId={lesson.streamVideoId}
+          playback={playback}
           tool={lesson.tool}
           backHref={courseHref}
           indexLabel={`${numberLabel} / ${totalInCourse}`}
@@ -195,6 +204,7 @@ export function WatchView({ lessonId }: { lessonId: string }) {
           <div className="flex flex-col gap-6">
             <VideoPlayer
               streamVideoId={lesson.streamVideoId}
+              playback={playback}
               tool={lesson.tool}
               topRightLabel={`${chapter ? `Chapter ${chapter.number} ・ ` : ""}${numberLabel} / ${totalInCourse}`}
               durationSeconds={lesson.durationSeconds}
