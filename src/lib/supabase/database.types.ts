@@ -329,10 +329,60 @@ export interface Database {
         Update: { read_at?: string };
         Relationships: [];
       };
+      /**
+       * 監査ログ。append-only（UPDATE / DELETE を grant していない）。
+       * Update を never にして、型の上でも書き換えられないようにしておく。
+       */
+      admin_audit_logs: {
+        Row: {
+          id: string;
+          actor_id: string | null;
+          actor_email: string;
+          action: string;
+          target_type: string;
+          target_id: string | null;
+          target_label: string | null;
+          detail: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          actor_id: string | null;
+          actor_email: string;
+          action: string;
+          target_type: string;
+          target_id?: string | null;
+          target_label?: string | null;
+          detail?: Json;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      /**
+       * 受講生一覧。SECURITY DEFINER 関数で auth.users へ到達する。
+       * View(security_invoker = true) では authenticated に auth.users の
+       * SELECT 権限が無く permission denied になるため、この形にしている。
+       */
+      admin_list_students: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          email: string;
+          display_name: string | null;
+          role: UserRole;
+          notification_enabled: boolean;
+          created_at: string;
+          last_sign_in_at: string | null;
+          invited_at: string | null;
+          email_confirmed_at: string | null;
+          banned_until: string | null;
+        }[];
+      };
     };
     Enums: {
       user_role: UserRole;

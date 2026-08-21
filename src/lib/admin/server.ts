@@ -3,7 +3,6 @@ import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getContentBundle } from "@/lib/content/server";
-import type { UserRole } from "@/lib/supabase/database.types";
 import {
   buildStudentRows,
   type AdminCourse,
@@ -22,29 +21,6 @@ import {
  * ここで使うのは **ログイン中の admin 自身の権限**（RLS 経由）だけ。
  * Secret Key はここでは一切使わない（使うのは招待の 1 経路のみ）。
  */
-
-/**
- * admin_list_students() の 1 行。
- *
- * database.types.ts は Supabase から生成しているため、migration を適用して
- * 再生成するまでこの関数はジェネリクスに含まれない。
- * 型をここに置き、rpc の呼び出しだけを局所的にキャストしている。
- * 再生成後もこの型は「アプリが期待する形」の記述として残す価値がある。
- */
-type AdminStudentRow = {
-  id: string;
-  email: string;
-  display_name: string | null;
-  role: UserRole;
-  notification_enabled: boolean;
-  created_at: string;
-  last_sign_in_at: string | null;
-  invited_at: string | null;
-  email_confirmed_at: string | null;
-  banned_until: string | null;
-};
-
-type RpcResult = { data: AdminStudentRow[] | null; error: { message: string; code?: string } | null };
 
 /** テーブル / 関数が未作成（マイグレーション未適用）を表す PostgREST のコード */
 const MISSING_CODES = new Set(["PGRST202", "PGRST205"]);
@@ -66,10 +42,7 @@ async function loadStudents(): Promise<AdminStudentsBundle> {
     lessonCount: course.totalLessons,
   }));
 
-  const usersResult = (await supabase.rpc(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    "admin_list_students" as any,
-  )) as unknown as RpcResult;
+  const usersResult = await supabase.rpc("admin_list_students");
 
   if (usersResult.error) {
     if (usersResult.error.code && MISSING_CODES.has(usersResult.error.code)) {

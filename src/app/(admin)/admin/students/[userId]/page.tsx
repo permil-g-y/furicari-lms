@@ -2,16 +2,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StudentStatusTag } from "@/components/admin/StudentStatusTag";
+import { EnrollmentEditor } from "@/components/admin/EnrollmentEditor";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getAdminStudent, getAdminStudents } from "@/lib/admin/server";
-import { adminDate, expiryLabel, progressLabel, studentStatus } from "@/lib/admin/format";
+import { adminDate, progressLabel, studentStatus } from "@/lib/admin/format";
 
 /**
  * 受講生詳細。
  *
  * 「動画が見られません」の問い合わせに対して、
  * **この 1 画面で原因が分かる**ことを最優先にしている。
- * 権限の変更（付与・解除・期限）は 7-C で同じ画面に足す。
+ * 受講権限の付与・解除・期限の変更も、離れた画面へ飛ばさずここで完結させる。
  */
 export default async function AdminStudentDetailPage({
   params,
@@ -27,9 +28,6 @@ export default async function AdminStudentDetailPage({
   if (!student) notFound();
 
   const status = studentStatus(student);
-  const enrolledIds = new Set(student.enrollments.map((e) => e.courseId));
-  const notEnrolled = courses.filter((course) => !enrolledIds.has(course.id));
-
   return (
     <>
       <div className="mb-4">
@@ -65,50 +63,15 @@ export default async function AdminStudentDetailPage({
         </dl>
       </section>
 
-      <section className="rounded-2xl border border-line bg-surface">
-        <h2 className="border-b border-line px-6 py-4 font-rounded text-16 font-bold text-ink">
-          受講コース
-        </h2>
-
-        {student.enrollments.length === 0 ? (
-          <p className="px-6 py-5 text-14 text-ink3">
-            受講権限がありません。この状態では動画を再生できません。
-          </p>
-        ) : (
-          <ul>
-            {student.enrollments.map((enrollment) => (
-              <li
-                key={enrollment.courseId}
-                className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line px-6 py-4 last:border-b-0"
-              >
-                <span className="min-w-0 flex-1 text-14 text-ink">
-                  {enrollment.courseTitle}
-                </span>
-                <span className="text-13 text-ink2 tabular-nums">
-                  {expiryLabel(enrollment.expiresAt)}
-                </span>
-                {enrollment.active ? (
-                  <StudentStatusTag label="有効" tone="ok" />
-                ) : (
-                  <StudentStatusTag label="期限切れ" tone="warn" />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {notEnrolled.length > 0 && (
-          <div className="border-t border-line px-6 py-4">
-            <p className="text-125 text-ink4">未受講のコース</p>
-            <p className="mt-1.5 text-13 text-ink2">
-              {notEnrolled.map((course) => course.title).join(" / ")}
-            </p>
-          </div>
-        )}
-      </section>
+      <EnrollmentEditor
+        userId={student.id}
+        studentName={student.displayName}
+        courses={courses}
+        enrollments={student.enrollments}
+      />
 
       <p className="mt-4 text-125 text-ink4">
-        受講権限の付与・解除・期限の変更は 7-C で、この画面から行えるようにします。
+        受講権限の変更は記録に残ります（誰が・いつ・何をしたか）。
       </p>
     </>
   );
