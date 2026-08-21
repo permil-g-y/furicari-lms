@@ -86,9 +86,12 @@ function resolveShell(pathname: string): ShellConfig {
 
 export function AppShell({
   user,
+  hasUnreadNews = false,
   children,
 }: {
   user: HeaderUser;
+  /** 未読のお知らせがあるか（ヘッダーのドット表示） */
+  hasUnreadNews?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -101,11 +104,11 @@ export function AppShell({
         ラッパー div（＝ヘッダーと同じ高さ）で囲むと固定されずに流れてしまう。
         PC/Mobile の出し分けは Header 側の hidden lg:block が持っている。
       */}
-      <Header active={config.pcNav} user={user} />
+      <Header active={config.pcNav} user={user} hasUnreadNews={hasUnreadNews} />
 
       {config.mobileHeader && (
         <div className="lg:hidden">
-          <MobileHeader {...config.mobileHeader} />
+          <MobileHeader {...config.mobileHeader} hasUnreadNews={hasUnreadNews} />
         </div>
       )}
 

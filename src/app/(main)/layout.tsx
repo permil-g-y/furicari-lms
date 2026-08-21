@@ -3,6 +3,8 @@ import { FavoritesProvider } from "@/lib/favorites-context";
 import { requireUser } from "@/lib/auth/user";
 import { getContentBundle } from "@/lib/content/server";
 import { ContentProvider } from "@/lib/content/context";
+import { getAnnouncements, getUnreadAnnouncementCount } from "@/lib/news/server";
+import { AnnouncementProvider } from "@/lib/news/context";
 
 /**
  * 認証が必要なゾーン。
@@ -18,20 +20,28 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, content] = await Promise.all([requireUser(), getContentBundle()]);
+  const [user, content, announcements, unreadNews] = await Promise.all([
+    requireUser(),
+    getContentBundle(),
+    getAnnouncements(),
+    getUnreadAnnouncementCount(),
+  ]);
 
   return (
     <ContentProvider snapshot={content.snapshot} progress={content.progress}>
-      <FavoritesProvider
+      <AnnouncementProvider announcements={announcements}>
+        <FavoritesProvider
         initialLessonIds={content.progress.favoriteLessonIds}
         initialCourseIds={content.progress.favoriteCourseIds}
       >
         <AppShell
           user={{ displayName: user.displayName, avatarUrl: user.avatarUrl }}
+          hasUnreadNews={unreadNews > 0}
         >
           {children}
         </AppShell>
-      </FavoritesProvider>
+        </FavoritesProvider>
+      </AnnouncementProvider>
     </ContentProvider>
   );
 }

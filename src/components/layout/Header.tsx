@@ -29,9 +29,12 @@ const navItems: { key: PcNavKey; label: string; href: string }[] = [
 export function Header({
   active,
   user,
+  hasUnreadNews = false,
 }: {
   active?: PcNavKey | null;
   user: HeaderUser;
+  /** 未読のお知らせがあるか。無いときはドットを出さない */
+  hasUnreadNews?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-20 hidden border-b border-line bg-surface lg:block">
@@ -73,7 +76,9 @@ export function Header({
             className="relative flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface transition-colors hover:bg-page"
           >
             <Icon name="icon-chat" size={22} alt="お知らせ" />
-            <span className="absolute right-2.5 top-[9px] h-2 w-2 rounded-full border-2 border-white bg-alert" />
+            {hasUnreadNews && (
+              <span className="absolute right-2.5 top-[9px] h-2 w-2 rounded-full border-2 border-white bg-alert" />
+            )}
           </Link>
 
           <Link

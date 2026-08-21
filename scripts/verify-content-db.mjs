@@ -42,6 +42,8 @@ const tables = [
   "lesson_view_events",
   "lesson_favorites",
   "course_favorites",
+  // Phase 6: お知らせ
+  "announcements",
 ];
 
 let allPresent = true;

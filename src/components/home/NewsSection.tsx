@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { announcements } from "@/lib/mock";
+import { getAnnouncements } from "@/lib/news/server";
 import type { Announcement } from "@/lib/types";
 
 /** NEW バッジ / カテゴリバッジ（高さ 22・角丸 6・10.5px の太字） */
@@ -35,9 +35,17 @@ function NewsBadge({ item, height = 22 }: { item: Announcement; height?: number 
  * PC は 1fr 380px の 2 カラム（お知らせ 3 件 + コース一覧への誘導）。
  * Mobile は最新 1 件だけの横長バナー。
  */
-export function NewsSection() {
+export async function NewsSection() {
+  const announcements = await getAnnouncements();
   const latest = announcements.slice(0, 3);
   const top = announcements[0];
+
+  /*
+   * 公開中のお知らせが 1 件も無いときはセクションごと出さない。
+   * 見出しだけが残って中身が空になるのを避けるため
+   * （TOP の「続きから学ぶ」と同じ扱い）。
+   */
+  if (!top) return null;
 
   return (
     <>

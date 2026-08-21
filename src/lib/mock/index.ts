@@ -13,29 +13,15 @@
  *   （マイグレーション未適用時のフォールバックだけが
  *     @/lib/mock/courses・@/lib/mock/taxonomy を直接読む）
  *
+ * ■ Phase 6-A でここから消えたもの
+ *   お知らせも Supabase が唯一の source of truth になった。
+ *     - Server Component … `getAnnouncements()` (@/lib/news/server)
+ *     - Client Component … `useAnnouncements()` (@/lib/news/context)
+ *     - 表示用の定数     … @/lib/news/presentation
+ *
  * ■ ここに残っているもの
- *   - お知らせ（Phase 6 で DB 化）
- *   - ユーザーのダミー項目（パスワード最終更新日など、取得元が無いもの）
- *   - 学習進捗の生データ（@/lib/progress/dummy が読む。Phase 5 で DB 化）
+ *   - ユーザーのダミー項目（取得元が無いもの）
+ *   - 学習進捗の生データ（@/lib/progress/dummy が読む。フォールバック用）
  */
 
-export {
-  announcementCategoryLabel,
-  announcementCategoryStyle,
-  announcements,
-  currentUser,
-} from "./user";
-
-import { announcements } from "./user";
-
-export function getAnnouncement(id: string) {
-  return announcements.find((a) => a.id === id);
-}
-
-/** お知らせ詳細の「次のお知らせ」 */
-export function getNextAnnouncement(id: string) {
-  const index = announcements.findIndex((a) => a.id === id);
-  return index >= 0 && index < announcements.length - 1
-    ? announcements[index + 1]
-    : undefined;
-}
+export { currentUser } from "./user";
