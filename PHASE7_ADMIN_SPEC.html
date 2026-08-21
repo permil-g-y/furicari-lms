@@ -1,0 +1,528 @@
+<title>Phase 7 管理画面設計</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@600;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+:root{
+  --ink:#141A24;         --ink-2:#3C4657;      --ink-3:#6B7688;
+  --ground:#F6F7F9;      --panel:#FFFFFF;      --panel-2:#EFF2F6;
+  --rule:#DEE3EA;        --rule-soft:#E9EDF2;
+  --accent:#1F3A6E;      --accent-lit:#2F6FED; --accent-wash:#E8EFFC;
+  --must:#B23A16;        --must-wash:#FBEDE7;
+  --want:#8A6008;        --want-wash:#FAF2DF;
+  --later:#5C6B7F;       --later-wash:#EDF0F4;
+  --shadow:0 1px 2px rgba(20,26,36,.05), 0 8px 24px -12px rgba(20,26,36,.16);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#E7ECF3;       --ink-2:#B3BECD;      --ink-3:#7E8B9C;
+    --ground:#11151C;    --panel:#171D27;      --panel-2:#1D2530;
+    --rule:#2A3340;      --rule-soft:#222B36;
+    --accent:#9DBBF0;    --accent-lit:#6E9BF5; --accent-wash:#1B2740;
+    --must:#F0A184;      --must-wash:#33211A;
+    --want:#E3C071;      --want-wash:#302716;
+    --later:#93A3B6;     --later-wash:#212934;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E7ECF3;         --ink-2:#B3BECD;      --ink-3:#7E8B9C;
+  --ground:#11151C;      --panel:#171D27;      --panel-2:#1D2530;
+  --rule:#2A3340;        --rule-soft:#222B36;
+  --accent:#9DBBF0;      --accent-lit:#6E9BF5; --accent-wash:#1B2740;
+  --must:#F0A184;        --must-wash:#33211A;
+  --want:#E3C071;        --want-wash:#302716;
+  --later:#93A3B6;       --later-wash:#212934;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Noto Sans JP",system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;
+  font-size:15.5px; line-height:1.9; letter-spacing:.01em;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------- 見出し ---------- */
+.mincho{font-family:"Zen Old Mincho","Noto Serif JP",serif;font-weight:700;letter-spacing:.02em}
+
+header.top{padding:72px 0 40px;border-bottom:1px solid var(--rule)}
+.eyebrow{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11.5px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--accent-lit);margin:0 0 18px
+}
+h1{margin:0;font-size:clamp(30px,4.6vw,44px);line-height:1.35;text-wrap:balance;color:var(--ink)}
+.lede{margin:22px 0 0;max-width:60ch;font-size:16.5px;color:var(--ink-2)}
+.meta{
+  margin:28px 0 0;display:flex;flex-wrap:wrap;gap:8px 20px;
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11.5px;color:var(--ink-3)
+}
+
+h2{
+  margin:76px 0 6px;font-size:clamp(21px,2.6vw,26px);line-height:1.5;
+  color:var(--ink);display:flex;align-items:baseline;gap:14px
+}
+h2 .n{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-weight:600;
+  color:var(--accent-lit);letter-spacing:.1em;flex:none
+}
+h2 + .sub{margin:0 0 26px 0;color:var(--ink-3);font-size:14px;padding-left:40px}
+h3{margin:40px 0 12px;font-size:17px;line-height:1.6;color:var(--ink)}
+p{margin:0 0 18px;max-width:66ch}
+strong{font-weight:700;color:var(--ink)}
+code{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.87em;
+  background:var(--panel-2);border:1px solid var(--rule-soft);
+  padding:.12em .42em;border-radius:5px;color:var(--ink-2)
+}
+
+/* ---------- 主題ブロック ---------- */
+.thesis{
+  margin:40px 0 0;padding:30px 34px;background:var(--panel);
+  border:1px solid var(--rule);border-left:3px solid var(--accent-lit);
+  border-radius:4px;box-shadow:var(--shadow)
+}
+.thesis .q{margin:0;font-size:19px;line-height:1.8;color:var(--ink)}
+.thesis .a{margin:16px 0 0;font-size:14px;color:var(--ink-3)}
+
+/* ---------- 優先度カード ---------- */
+.tiers{display:flex;flex-direction:column;gap:18px;margin:8px 0 0}
+.tier{
+  background:var(--panel);border:1px solid var(--rule);border-radius:6px;
+  overflow:hidden;box-shadow:var(--shadow)
+}
+.tier-head{display:flex;align-items:baseline;gap:14px;padding:18px 24px;border-bottom:1px solid var(--rule-soft)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;transform:translateY(-1px)}
+.tier-name{font-size:16px;font-weight:700;letter-spacing:.02em}
+.tier-note{margin-left:auto;font-size:12.5px;color:var(--ink-3);text-align:right}
+.tier ol{margin:0;padding:6px 24px 20px 24px;list-style:none;counter-reset:t}
+.tier li{
+  counter-increment:t;position:relative;padding:11px 0 11px 40px;
+  border-bottom:1px solid var(--rule-soft);font-size:14.5px;line-height:1.75
+}
+.tier li:last-child{border-bottom:0}
+.tier li::before{
+  content:counter(t,decimal-leading-zero);position:absolute;left:0;top:12px;
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;font-weight:600;color:var(--ink-3)
+}
+.tier li .why{display:block;color:var(--ink-3);font-size:13px;margin-top:1px}
+.t-must .dot{background:var(--must)} .t-must .tier-name{color:var(--must)} .t-must .tier-head{background:var(--must-wash)}
+.t-want .dot{background:var(--want)} .t-want .tier-name{color:var(--want)} .t-want .tier-head{background:var(--want-wash)}
+.t-later .dot{background:var(--later)} .t-later .tier-name{color:var(--later)} .t-later .tier-head{background:var(--later-wash)}
+
+/* ---------- 表 ---------- */
+.scroll{overflow-x:auto;margin:22px 0 26px;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+th,td{padding:12px 18px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule-soft);line-height:1.7}
+th{
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--panel-2);white-space:nowrap
+}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{
+  display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:20px;
+  white-space:nowrap;letter-spacing:.02em
+}
+.p-move{background:var(--accent-wash);color:var(--accent)}
+.p-maybe{background:var(--want-wash);color:var(--want)}
+.p-stay{background:var(--later-wash);color:var(--later)}
+
+/* ---------- 図・コード ---------- */
+pre{
+  margin:22px 0;padding:22px 24px;background:var(--panel);border:1px solid var(--rule);
+  border-radius:6px;overflow-x:auto;font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:12.5px;line-height:1.95;color:var(--ink-2);white-space:pre
+}
+pre b{color:var(--accent-lit);font-weight:600}
+pre .warn{color:var(--must)}
+pre .ok{color:var(--accent)}
+
+/* ---------- 手順 ---------- */
+.steps{margin:24px 0 0;padding:0;list-style:none;counter-reset:s}
+.steps li{
+  counter-increment:s;position:relative;padding:0 0 26px 62px;border-left:1px solid var(--rule);
+  margin-left:17px
+}
+.steps li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps li::before{
+  content:counter(s);position:absolute;left:-17px;top:-2px;width:34px;height:34px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--rule);color:var(--accent-lit);
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;font-weight:600;
+  display:grid;place-items:center
+}
+.steps .st{display:block;font-weight:700;font-size:15.5px;margin-bottom:4px;line-height:1.6}
+.steps .sd{display:block;color:var(--ink-2);font-size:14px}
+.steps .tag{
+  display:inline-block;margin-left:10px;font-family:"JetBrains Mono",monospace;
+  font-size:10.5px;font-weight:600;letter-spacing:.08em;color:var(--accent-lit);
+  background:var(--accent-wash);padding:2px 8px;border-radius:4px;vertical-align:1px
+}
+
+/* ---------- 注記 ---------- */
+.note{
+  margin:26px 0;padding:20px 24px;border-radius:6px;background:var(--panel);
+  border:1px solid var(--rule);border-left:3px solid var(--must)
+}
+.note .lab{
+  display:block;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--must);margin-bottom:8px
+}
+.note p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.note p + p{margin-top:12px}
+
+.end{margin:22px 0 0;padding:0;list-style:none}
+.end li{position:relative;padding:9px 0 9px 32px;font-size:15px;line-height:1.8;border-bottom:1px solid var(--rule-soft)}
+.end li:last-child{border-bottom:0}
+.end li::before{
+  content:"";position:absolute;left:4px;top:19px;width:11px;height:6px;
+  border-left:2px solid var(--accent-lit);border-bottom:2px solid var(--accent-lit);
+  transform:rotate(-45deg)
+}
+
+footer{margin-top:88px;padding-top:26px;border-top:1px solid var(--rule);
+  font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink-3);line-height:2}
+
+@media (max-width:640px){
+  body{font-size:15px}
+  .wrap{padding:0 18px 72px}
+  header.top{padding:48px 0 32px}
+  h2{margin-top:58px;flex-direction:column;gap:4px}
+  h2 + .sub{padding-left:0}
+  .thesis{padding:24px 20px}
+  .tier-note{margin-left:0;width:100%;text-align:left}
+  .tier-head{flex-wrap:wrap}
+}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Furicari LMS &nbsp;/&nbsp; Phase 7 &nbsp;/&nbsp; Design</p>
+  <h1 class="mincho">運営スタッフが SQL を<br>卒業するための管理画面</h1>
+  <p class="lede">
+    Phase 7 の目的は、高機能な管理システムを作ることではありません。
+    非エンジニアの運営スタッフが Supabase と Cloudflare を一度も開かずに、
+    フリキャリの日常業務を回せる状態にすることです。
+  </p>
+  <p class="meta">
+    <span>2026-08-21</span><span>対象コミット b223474（Phase 6 完了）</span><span>設計のみ / 実装未着手</span>
+  </p>
+</header>
+
+<h2><span class="n">01</span><span class="mincho">優先度を決めた基準</span></h2>
+<p class="sub">「あると便利か」ではなく「何回起きるか」で切る</p>
+
+<p>
+機能の要不要は、運営でその作業が<strong>何回発生するか</strong>だけで判断しました。
+毎週起きることは画面へ移し、数ヶ月に一度のことは SQL のままで構いません。
+画面を作るコストは、そこで節約できる手作業の回数に見合ったときだけ正当化されます。
+</p>
+
+<div class="thesis">
+  <p class="q mincho">週に一度起きることは、画面にある。<br>数ヶ月に一度のことは、SQL でよい。</p>
+  <p class="a">この一行が、以下すべての優先度判断の根拠になっています。</p>
+</div>
+
+<h2><span class="n">02</span><span class="mincho">前提 — DB 側はもう準備できている</span></h2>
+<p class="sub">Phase 7 は「作り直す仕事」ではなく「画面を載せる仕事」</p>
+
+<p>
+Phase 1 の設計時点で、<strong>全テーブルに管理者用の RLS ポリシーが既に入っています</strong>。
+<code>is_admin()</code> も、<code>profiles.role</code> の権限昇格防止（列レベル権限 + トリガの二層）も実装済みです。
+</p>
+<pre>public.courses / chapters / lessons / categories / tools   <b>Admins manage …</b>
+public.user_course_enrollments                             <b>Admins manage …</b>
+public.announcements                                       <b>Admins manage …</b></pre>
+<p>
+そのため Phase 7 で必要な DB 変更は最小限に収まります（→ 06）。
+新しい権限体系を作るのではなく、<strong>既にある権限の上に画面を載せるだけ</strong>です。
+</p>
+
+<h2><span class="n">03</span><span class="mincho">機能一覧と 3 段階の優先度</span></h2>
+<p class="sub">🔴 絶対必要 / 🟡 できれば欲しい / ⬜ 後回しでいい</p>
+
+<div class="tiers">
+
+  <section class="tier t-must">
+    <div class="tier-head">
+      <span class="dot"></span><span class="tier-name">Phase 7 で絶対必要</span>
+      <span class="tier-note">これが無いと運営を開始できない</span>
+    </div>
+    <ol>
+      <li>管理画面のアクセス制御<span class="why">土台。これ無しには何も置けない</span></li>
+      <li>受講生一覧・受講生詳細<span class="why">問い合わせ対応の起点になる</span></li>
+      <li>受講コースの付与・解除<span class="why">最頻業務。今は毎回 SQL を書いている</span></li>
+      <li>受講期限の設定・延長<span class="why">課金と直結する</span></li>
+      <li>受講生の招待（コース付与と同時に）<span class="why">別作業にすると必ず片方を忘れる</span></li>
+      <li>Cloudflare へのアップロード<span class="why">残り 89 本を入れるのに必須</span></li>
+      <li>Video UID の自動紐付け<span class="why">手作業のコピペは必ず事故る</span></li>
+      <li>実際の動画尺の自動取得<span class="why">現在の不一致がここで解消する</span></li>
+      <li>お知らせの作成・公開<span class="why">受講生への唯一の連絡手段</span></li>
+      <li>ダッシュボード（要対応の可視化）<span class="why">動画未設定のレッスンに気づけない</span></li>
+      <li>Custom SMTP<span class="why">招待メールが届かないとサービスが始まらない（→ 08）</span></li>
+    </ol>
+  </section>
+
+  <section class="tier t-want">
+    <div class="tier-head">
+      <span class="dot"></span><span class="tier-name">できれば欲しい</span>
+      <span class="tier-note">無くても運営は回る</span>
+    </div>
+    <ol>
+      <li>レッスンの編集・並び替え・公開切替<span class="why">代替：SQL（月 1 回程度）</span></li>
+      <li>レッスン別の完了率<span class="why">教材改善の手がかりになるが、無くても運営はできる</span></li>
+      <li>Chapter の追加・改名<span class="why">代替：SQL</span></li>
+      <li>コースの新規作成<span class="why">代替：SQL（数ヶ月に一度）</span></li>
+      <li>受講権限の一括付与<span class="why">代替：1 人ずつ付与する</span></li>
+      <li>お知らせのプレビュー<span class="why">代替：非公開のまま確認する</span></li>
+      <li>Cloudflare Webhook での自動同期<span class="why">代替：手動の「情報を取得」ボタン</span></li>
+    </ol>
+  </section>
+
+  <section class="tier t-later">
+    <div class="tier-head">
+      <span class="dot"></span><span class="tier-name">後回しでいい</span>
+      <span class="tier-note">需要が出てから</span>
+    </div>
+    <ol>
+      <li>カテゴリ・ツールの管理<span class="why">グラデーション等のデザイン値を含み、画面化の価値が低い</span></li>
+      <li>CSV エクスポート</li>
+      <li>学習状況のグラフ・時系列<span class="why">数字が読めれば運営判断はできる</span></li>
+      <li>監査ログ<span class="why">運営が 1〜2 名のうちは不要</span></li>
+      <li>受講生ごとの個別お知らせ<span class="why">Phase 6 で全体配信のみと決定済み</span></li>
+      <li>管理者の追加（role 変更）<span class="why">あえて画面に置かない。理由は 04 を参照</span></li>
+    </ol>
+  </section>
+
+</div>
+
+<h2><span class="n">04</span><span class="mincho">管理者権限とアクセス制御</span></h2>
+<p class="sub">画面を隠すことをセキュリティにしない</p>
+
+<p>
+ログインは<strong>受講生と同じ <code>/login</code> を使います</strong>。管理者専用のログイン画面は作りません。
+入口が 2 つあると、片方の穴が全体の穴になるためです。
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>層</th><th>何をするか</th><th>役割</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td><code>proxy.ts</code> で <code>/admin</code> を早期に判定する</td><td>コスト削減</td></tr>
+    <tr><td class="num">2</td><td><code>(admin)/layout.tsx</code> で <code>requireAdmin()</code></td><td>UX</td></tr>
+    <tr><td class="num">3</td><td><strong>RLS</strong> が admin 以外の読み書きを拒否する</td><td><strong>本丸</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Secret Key を使う場所を 1 箇所に固定する</h3>
+<p>
+管理操作は原則すべて、ログイン中の admin ユーザーの<strong>権限（RLS）を通して</strong>行います。
+RLS を貫通する Secret Key を使うのは、<strong>受講生の招待 1 経路だけ</strong>です。
+<code>auth.admin.inviteUserByEmail()</code> が Admin API でしか呼べないためで、
+呼ぶ直前に必ず <code>requireAdmin()</code> を通します。
+これで「強い鍵が使われる場所」がコード上 1 箇所に固定され、レビューできる状態になります。
+</p>
+
+<div class="note">
+  <span class="lab">意図的に画面へ置かないもの</span>
+  <p>
+    <strong>管理者を増やす操作（<code>profiles.role</code> の変更）は、管理画面に置きません。</strong>
+    置いてしまうと、管理画面の脆弱性 1 つがそのまま権限昇格につながります。
+  </p>
+  <p>
+    管理者の追加は実質「ほぼ起きない」頻度なので、SQL での手動運用を維持します。
+    これは手抜きではなく、構造的に事故を不可能にするための設計判断です。
+  </p>
+</div>
+
+<h2><span class="n">05</span><span class="mincho">Cloudflare 連携 — 動画を Vercel に通さない</span></h2>
+<p class="sub">Direct Creator Upload を使い、UID の照合処理そのものを無くす</p>
+
+<pre>1. 管理画面 ──────▶ Route Handler
+2. サーバー ──────▶ Cloudflare  POST /stream/direct_upload
+                     <b>{ requireSignedURLs: true, meta: { lessonSlug } }</b>
+3. Cloudflare ────▶ <b>uploadURL と uid</b> が返る
+4. サーバー ──────▶ その場で lessons.stream_video_id = uid <span class="ok">← 紐付け完了</span>
+5. ブラウザ ──────▶ uploadURL へ直接 PUT（動画は Vercel を通らない）</pre>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>この方式を選ぶ理由</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td>サイズ制限</td><td>Vercel の関数にはリクエストボディ上限がある。数百 MB の動画は通せない</td></tr>
+    <tr><td><strong>UID が発行時に確定する</strong></td><td>「アップロード後に UID を探して貼る」照合処理が<strong>丸ごと不要になる</strong></td></tr>
+    <tr><td>署名必須を維持できる</td><td><code>requireSignedURLs: true</code> を指定でき、Phase 4 の前提を崩さない</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>中断への備えと、動画尺の自動反映</h3>
+<p>
+アップロードが中断されると「UID はあるが動画が無い」状態が残ります。
+これを <code>lessons.stream_status</code>（<code>pending</code> / <code>ready</code> / <code>error</code>）で表現し、
+<strong><code>ready</code> でないレッスンは公開できないようにします</strong>。
+</p>
+<p>
+動画尺は Cloudflare が返す <code>duration</code> をそのまま使います。取得は 3 段構えです。
+</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>方式</th><th>優先度</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td>アップロード後のポーリング</td><td><span class="pill p-move">必須</span></td><td>変換完了まで数十秒〜数分。画面に「処理中」を出す</td></tr>
+    <tr><td>手動の「情報を取得」</td><td><span class="pill p-move">必須</span></td><td>ポーリングが途切れても必ず復旧できる逃げ道</td></tr>
+    <tr><td>Webhook</td><td><span class="pill p-maybe">できれば</span></td><td>署名検証が必要。上 2 つで足りる</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <span class="lab">既存 90 件の不一致について</span>
+  <p>
+    管理画面に「全レッスンの動画情報を一括再取得」を置きます。Phase 6 で先送りした
+    <code>duration_seconds</code> の不一致は、これ 1 回で解消します。
+  </p>
+  <p>
+    ただし<strong>一度「完了」になった進捗は絶対に取り消しません</strong>。
+    尺が伸びた結果として完了が未完了に戻るのは、受講生にとって理不尽だからです。
+    一括更新では <code>status</code> に触れません。
+  </p>
+</div>
+
+<h2><span class="n">06</span><span class="mincho">DB 変更</span></h2>
+<p class="sub">既存の受講生向けポリシーは 1 つも変更しない</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>#</th><th>変更</th><th>理由</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td><code>lessons.stream_status</code> 追加</td><td>アップロード中断を表現する</td></tr>
+    <tr><td class="num">2</td><td><code>lessons.stream_synced_at</code> 追加</td><td>いつ Cloudflare と同期したか</td></tr>
+    <tr><td class="num">3</td><td><code>lesson_progress</code> に admin の SELECT を<strong>追加</strong></td><td>現在は本人しか読めず、admin が進捗を見られない</td></tr>
+    <tr><td class="num">4</td><td><code>lesson_view_events</code> に同上</td><td>学習状況の集計に必要</td></tr>
+    <tr><td class="num">5</td><td><code>admin_user_overview</code> view</td><td>メールと最終ログインを admin にだけ見せる</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+<strong>3 と 4 は「RLS を緩める」変更ではありません。</strong>
+既存の本人ポリシーはそのまま残し、<code>is_admin()</code> を条件とする別のポリシーを追加します。
+受講生から見える範囲は一切変わりません。
+</p>
+<p>
+5 の view は <code>security_invoker</code> と <code>is_admin()</code> で二重にガードします。
+<code>profiles</code> にメールアドレスを複製する案は採りません。二重管理になり、必ず食い違うためです。
+</p>
+
+<h2><span class="n">07</span><span class="mincho">実装順</span></h2>
+<p class="sub">最頻業務をできるだけ早く SQL から降ろす</p>
+
+<ol class="steps">
+  <li><span class="st">管理画面の土台<span class="tag">7-A</span></span><span class="sd">Route Group / <code>requireAdmin()</code> / proxy の早期拒否 / 空のダッシュボード。admin だけが <code>/admin</code> に入れる状態にする</span></li>
+  <li><span class="st">受講生一覧・詳細（読み取りのみ）<span class="tag">7-B</span></span><span class="sd">admin 用の RLS ポリシーと view を追加。誰がどのコースを受講しているかが画面で分かる</span></li>
+  <li><span class="st">受講権限の付与・解除・期限<span class="tag">7-C</span></span><span class="sd"><strong>最頻業務がここで SQL を卒業する。</strong>ここを早く置くために 7-B は読み取りだけに絞ってある</span></li>
+  <li><span class="st">受講生の招待<span class="tag">7-D</span></span><span class="sd">Secret Key 経路。招待から視聴開始まで画面で完結する（※ SMTP の判断が必要）</span></li>
+  <li><span class="st">アップロードと自動紐付け<span class="tag">7-E</span></span><span class="sd">Cloudflare アップロード / UID 自動紐付け / 尺の自動取得。動画追加が画面で完結する</span></li>
+  <li><span class="st">既存 90 件の尺を一括再取得<span class="tag">7-F</span></span><span class="sd">7-E の副産物。Phase 6 で先送りした不一致が解消する</span></li>
+  <li><span class="st">お知らせの作成・編集・公開<span class="tag">7-G</span></span><span class="sd">本文は既存の <code>jsonb</code> ブロック配列のまま。リッチエディタは作らない</span></li>
+  <li><span class="st">レッスン編集とダッシュボード仕上げ<span class="tag">7-H</span></span><span class="sd">編集・並び替え・公開切替。「⚠ 要対応」が機能する状態にする</span></li>
+</ol>
+
+<h2><span class="n">08</span><span class="mincho">Custom SMTP をどうするか</span></h2>
+<p class="sub">結論：Phase 7 に含めるべき。というより前提条件</p>
+
+<p>
+Supabase の共有 SMTP は<strong>開発用</strong>で、送信レート制限が厳しく、本番の招待には耐えません。
+<strong>招待メールが届かない = 受講生が入れない = サービスが始まらない</strong>ため、
+これは「あると良い機能」ではなく前提条件です。
+差出人ドメインの都合で迷惑メール判定されやすい点、メール文面を日本語にできない点も同じ理由です。
+</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>候補</th><th>特徴</th></tr></thead>
+  <tbody>
+    <tr><td>Resend</td><td>設定が最も簡単。Supabase の公式ドキュメントでも例示されている</td></tr>
+    <tr><td>SendGrid</td><td>実績が長く、到達率のレポートが厚い</td></tr>
+    <tr><td>Amazon SES</td><td>最安。ただしサンドボックス解除の審査に時間がかかる</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+なお、外部サービスへの新規契約は私の判断では行いません。
+<strong>判断が必要なのは「どれを契約するか」だけ</strong>で、実装側の作業はどれを選んでも同じです。
+</p>
+
+<h2><span class="n">09</span><span class="mincho">SQL 運用をどこまで画面へ移すか</span></h2>
+<p class="sub">残す 3 つは、意図的に残す</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>現在 SQL でやっていること</th><th>頻度</th><th>Phase 7</th></tr></thead>
+  <tbody>
+    <tr><td>受講生の招待</td><td class="num">週</td><td><span class="pill p-move">画面へ移す</span></td></tr>
+    <tr><td>受講権限の付与・解除</td><td class="num">週</td><td><span class="pill p-move">画面へ移す</span></td></tr>
+    <tr><td>Video UID の紐付け</td><td class="num">週</td><td><span class="pill p-move">画面へ移す</span></td></tr>
+    <tr><td>動画尺の設定</td><td class="num">週</td><td><span class="pill p-move">自動化する</span></td></tr>
+    <tr><td>受講期限の設定・延長</td><td class="num">月</td><td><span class="pill p-move">画面へ移す</span></td></tr>
+    <tr><td>お知らせの作成・公開</td><td class="num">月</td><td><span class="pill p-move">画面へ移す</span></td></tr>
+    <tr><td>学習状況の確認</td><td class="num">月</td><td><span class="pill p-move">画面へ移す</span></td></tr>
+    <tr><td>レッスンの編集・並び替え</td><td class="num">月</td><td><span class="pill p-maybe">できれば</span></td></tr>
+    <tr><td>Chapter の追加</td><td class="num">数ヶ月</td><td><span class="pill p-maybe">できれば</span></td></tr>
+    <tr><td>コースの新規作成</td><td class="num">数ヶ月</td><td><span class="pill p-maybe">できれば</span></td></tr>
+    <tr><td>カテゴリ・ツールの追加</td><td class="num">数ヶ月</td><td><span class="pill p-stay">SQL のまま</span></td></tr>
+    <tr><td>管理者を増やす</td><td class="num">ほぼ無</td><td><span class="pill p-stay">あえて SQL のまま</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2><span class="n">10</span><span class="mincho">リスク</span></h2>
+<p class="sub">Phase 7 で新しく増えるのは「強い鍵」と「外部 API」の 2 つ</p>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>リスク</th><th>影響</th><th>対策</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Secret Key を Vercel に置く</strong></td><td>漏れれば全データが読み書きされる</td><td>使用箇所を招待の 1 経路に限定。<code>server-only</code> と <code>requireAdmin()</code> の二重。他は全部 RLS 経由</td></tr>
+    <tr><td>Cloudflare API Token の権限過大</td><td>アカウント全体を操作されうる</td><td><strong>Stream:Edit のみ</strong>のトークンを新規発行する</td></tr>
+    <tr><td>招待メールが届かない</td><td>受講生が入れない</td><td>Custom SMTP（→ 08）。再送の導線も用意する</td></tr>
+    <tr><td>アップロード中断で UID だけ残る</td><td>再生できない動画が公開される</td><td><code>stream_status</code> で表現し、<code>ready</code> 以外は公開させない</td></tr>
+    <tr><td>尺の一括更新が進捗に影響する</td><td>「完了」が「未完了」に戻る</td><td>一括更新では <code>status</code> に触れない</td></tr>
+    <tr><td>管理画面での誤操作</td><td>受講生が締め出される</td><td>解除時に確認を挟み、<strong>対象人数を明示</strong>する</td></tr>
+    <tr><td><code>auth.users</code> を view で露出する</td><td>メールアドレスの漏洩</td><td><code>security_invoker</code> と <code>is_admin()</code> の二重ガード</td></tr>
+    <tr><td>admin が自分の権限を落とす</td><td>誰も管理できなくなる</td><td>role 変更を画面に置かないことで構造的に防ぐ</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2><span class="n">11</span><span class="mincho">Phase 7 完了時にできる状態</span></h2>
+<p class="sub">運営スタッフが Supabase / Cloudflare を開かずにできること</p>
+
+<ul class="end">
+  <li>新しい受講生を招待し、<strong>その場で</strong>受講コースと期限を設定する</li>
+  <li>「見られません」の問い合わせを 1 画面で調査し、その場で直す</li>
+  <li>受講期限を延長・停止し、期限切れ間近を事前に把握する</li>
+  <li>新しい動画をアップロードして公開まで完結する（UID も尺も自動）</li>
+  <li>お知らせを書き、公開日を決めて出す（予約公開も可）</li>
+  <li>誰がどこまで進んでいるか、<strong>どのレッスンで脱落しているか</strong>を見る</li>
+  <li>「⚠ 要対応」で、動画未設定・期限切れ間近・未ログインの招待に気づく</li>
+</ul>
+
+<p style="margin-top:34px">
+SQL が残るのは<strong>「新しいコースを立ち上げる」「カテゴリを増やす」「管理者を増やす」の 3 つだけ</strong>です。
+いずれも数ヶ月に一度以下の頻度で、最後の 1 つは安全のために意図的に残しています。
+</p>
+
+<footer>
+  フリキャリ LMS — Phase 7 設計 / 2026-08-21<br>
+  詳細な仕様は リポジトリの PHASE7_ADMIN_SPEC.md を参照
+</footer>
+
+</div>

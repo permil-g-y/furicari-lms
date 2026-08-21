@@ -31,11 +31,18 @@ export function Header({
   active,
   user,
   hasUnreadNews = false,
+  isAdmin = false,
 }: {
   active?: PcNavKey | null;
   user: HeaderUser;
   /** 未読のお知らせがあるか。無いときはドットを出さない */
   hasUnreadNews?: boolean;
+  /**
+   * 管理画面への導線を出すか。
+   * 受講生には出さない。URL が漏れても RLS で守られるが、
+   * 押しても弾かれるリンクを見せても混乱させるだけのため。
+   */
+  isAdmin?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-20 hidden border-b border-line bg-surface lg:block">
@@ -65,6 +72,15 @@ export function Header({
 
         <div className="flex items-center gap-3">
           <HeaderSearch />
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex h-11 items-center rounded-full border border-brand-tint2 bg-surface px-4 font-rounded text-135 font-bold text-brand-deep transition-colors hover:bg-brand-tint"
+            >
+              管理
+            </Link>
+          )}
 
           <Link
             href="/news"

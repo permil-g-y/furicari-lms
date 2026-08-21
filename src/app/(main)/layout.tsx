@@ -37,6 +37,7 @@ export default async function MainLayout({
         <AppShell
           user={{ displayName: user.displayName, avatarUrl: user.avatarUrl }}
           hasUnreadNews={unreadNews > 0}
+          isAdmin={user.role === "admin"}
         >
           {children}
         </AppShell>
