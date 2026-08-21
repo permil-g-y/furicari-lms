@@ -42,7 +42,7 @@ export function MobileHeader({
 
         <div className="ml-auto flex items-center gap-2">
           <Link
-            href="/videos"
+            href="/search"
             aria-label="検索"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-page"
           >

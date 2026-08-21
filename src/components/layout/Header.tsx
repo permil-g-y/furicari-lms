@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
-import { Icon, Logo, SearchGlyph } from "@/components/ui/Icon";
+import { Icon, Logo } from "@/components/ui/Icon";
+import { HeaderSearch } from "./HeaderSearch";
 
 export type PcNavKey = "home" | "courses" | "videos" | "favorites" | "news";
 
@@ -63,13 +64,7 @@ export function Header({
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/videos"
-            className="flex h-11 w-[220px] items-center gap-2.5 rounded-full border border-line bg-page px-4 transition-colors hover:border-brand-tint2"
-          >
-            <SearchGlyph size={15} />
-            <span className="text-135 text-ink4">動画・コースを検索</span>
-          </Link>
+          <HeaderSearch />
 
           <Link
             href="/news"
