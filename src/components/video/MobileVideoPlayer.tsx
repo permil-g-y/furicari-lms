@@ -25,6 +25,8 @@ export function MobileVideoPlayer({
   indexLabel,
   durationSeconds,
   positionSeconds,
+  onTime,
+  onPause,
 }: {
   /** Cloudflare Stream の Video UID（DB 由来。NULL ならダミー） */
   streamVideoId?: string;
@@ -37,6 +39,10 @@ export function MobileVideoPlayer({
   indexLabel: string;
   durationSeconds: number;
   positionSeconds: number;
+  /** 再生位置が進んだ（Phase 5） */
+  onTime?: (seconds: number) => void;
+  /** 一時停止した（Phase 5） */
+  onPause?: () => void;
 }) {
   const [playing, setPlaying] = useState(false);
   const { tools } = useContent();
@@ -51,7 +57,13 @@ export function MobileVideoPlayer({
   if (playback && playback.kind !== "placeholder") {
     return (
       <div className="relative bg-player">
-        <StreamStage playback={playback} title={indexLabel} />
+        <StreamStage
+          playback={playback}
+          title={indexLabel}
+          startSeconds={positionSeconds}
+          onTime={onTime}
+          onPause={onPause}
+        />
         <Link
           href={backHref}
           aria-label="コースへ戻る"

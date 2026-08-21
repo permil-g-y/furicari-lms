@@ -14,7 +14,8 @@ import type {
   LessonRow,
   ToolRow,
 } from "@/lib/supabase/database.types";
-import type { DummyProgressSource } from "@/lib/progress/dummy";
+import type { ProgressSource } from "@/lib/progress/types";
+import type { LessonMeta } from "@/lib/progress/compute";
 import type { ContentSnapshot } from "./api";
 
 /**
@@ -33,9 +34,71 @@ export type ContentRows = {
   lessons: LessonRow[];
 };
 
+/**
+ * sort_order はコース内の連番なので、全体を sort_order だけで並べるとコースが混ざる。
+ * 「コースの並び順 → コース内の並び順」の 2 段で並べる比較関数を作る。
+ */
+function byCourseThenOrder(courses: CourseRow[]) {
+  const courseOrderById = new Map(courses.map((c) => [c.id, c.sort_order]));
+  return <T extends { course_id: string; sort_order: number }>(a: T, b: T) =>
+    (courseOrderById.get(a.course_id) ?? 0) - (courseOrderById.get(b.course_id) ?? 0) ||
+    a.sort_order - b.sort_order;
+}
+
+/**
+ * slug と uuid の対応表。
+ *
+ * 画面・URL・進捗の受け渡しではすべて slug を使うが、進捗テーブルの外部キーは
+ * uuid を参照する。書き込み時にだけ必要になる変換をここで用意する。
+ *
+ * ★ この表は **サーバー側だけ** で持つこと。ContentSnapshot に含めて
+ *   ContentProvider 経由でクライアントへ配ると uuid が露出する。
+ */
+export type ContentIdMaps = {
+  lessonUuidBySlug: Map<string, string>;
+  lessonSlugByUuid: Map<string, string>;
+  courseUuidBySlug: Map<string, string>;
+  courseSlugByUuid: Map<string, string>;
+};
+
+export function buildIdMaps(rows: ContentRows): ContentIdMaps {
+  return {
+    lessonUuidBySlug: new Map(rows.lessons.map((l) => [l.slug, l.id])),
+    lessonSlugByUuid: new Map(rows.lessons.map((l) => [l.id, l.slug])),
+    courseUuidBySlug: new Map(rows.courses.map((c) => [c.slug, c.id])),
+    courseSlugByUuid: new Map(rows.courses.map((c) => [c.id, c.slug])),
+  };
+}
+
+/**
+ * 進捗の集計に必要な最小限の教材情報を、表示順に整列して返す。
+ *
+ * buildSnapshot は進捗を引数に取るため、進捗の集計より先に呼べない。
+ * 集計に必要なのは「レッスンの所属コースと尺」「コースの並び」だけなので、
+ * DB 行から直接組み立てて循環を避ける。
+ */
+export function buildProgressInputs(rows: ContentRows): {
+  lessons: LessonMeta[];
+  courseIds: string[];
+} {
+  const courseSlugById = new Map(rows.courses.map((c) => [c.id, c.slug]));
+  const compare = byCourseThenOrder(rows.courses);
+
+  return {
+    lessons: [...rows.lessons].sort(compare).map((row) => ({
+      id: row.slug,
+      courseId: courseSlugById.get(row.course_id) ?? "",
+      durationSeconds: row.duration_seconds,
+    })),
+    courseIds: [...rows.courses]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((c) => c.slug),
+  };
+}
+
 export function buildSnapshot(
   rows: ContentRows,
-  progress: DummyProgressSource,
+  progress: ProgressSource,
 ): ContentSnapshot {
   const categorySlugById = new Map(rows.categories.map((c) => [c.id, c.slug as CategoryKey]));
   const toolSlugById = new Map(rows.tools.map((t) => [t.id, t.slug as ToolKey]));
@@ -94,24 +157,18 @@ export function buildSnapshot(
       // 教材データから算出
       totalLessons: lessonsByCourseSlug.get(row.slug) ?? 0,
 
-      // ↓ ここから下は学習進捗。Phase 5 で Supabase へ差し替える（progress/dummy.ts）
+      // ↓ ここから下は学習進捗（ProgressSource 由来）。
+      //   Course 型に埋めておくことで、Phase 1 から続く画面側のコードが
+      //   course.completedLessons / course.status をそのまま読める。
       completedLessons: progress.completedLessonsByCourse[row.slug] ?? 0,
       status: progress.courseStatus[row.slug] ?? "not_started",
       nextLessonId: progress.nextLessonByCourse[row.slug],
     }));
 
-  // sort_order はコース内の連番なので、全体を sort_order だけで並べるとコースが混ざる。
-  // 「コースの並び順 → コース内の並び順」の 2 段で並べる。
-  const courseOrderById = new Map(rows.courses.map((c) => [c.id, c.sort_order]));
-  const byCourseThenOrder = <T extends { course_id: string; sort_order: number }>(
-    a: T,
-    b: T,
-  ) =>
-    (courseOrderById.get(a.course_id) ?? 0) - (courseOrderById.get(b.course_id) ?? 0) ||
-    a.sort_order - b.sort_order;
+  const compare = byCourseThenOrder(rows.courses);
 
   const chapters: Chapter[] = [...rows.chapters]
-    .sort(byCourseThenOrder)
+    .sort(compare)
     .map((row) => ({
       id: row.slug,
       courseId: courseSlugById.get(row.course_id) ?? "",
@@ -121,7 +178,7 @@ export function buildSnapshot(
     }));
 
   const lessons: Lesson[] = [...rows.lessons]
-    .sort(byCourseThenOrder)
+    .sort(compare)
     .map((row) => ({
       id: row.slug,
       courseId: courseSlugById.get(row.course_id) ?? "",

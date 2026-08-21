@@ -147,22 +147,26 @@ export default async function MyPage() {
       </section>
 
       {/* ------------------------------------------------ 現在学習中のコース */}
-      <section className="flex flex-col gap-3 px-4 lg:gap-5 lg:px-0">
-        <MyPageHeading
-          icon="icon-video"
-          title="現在学習中のコース"
-          action={{ label: "学習履歴を見る", href: "/history" }}
-        />
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-6">
-          {inProgress.map((course, i) => (
-            <InProgressCourseCard
-              key={course.id}
-              course={course}
-              highlight={i === 0}
-            />
-          ))}
-        </div>
-      </section>
+      {/* 学習中のコースが無いユーザーでは、見出しだけが残らないよう
+          セクションごと出さない（TOP の「続きから学ぶ」と同じ扱い）。 */}
+      {inProgress.length > 0 && (
+        <section className="flex flex-col gap-3 px-4 lg:gap-5 lg:px-0">
+          <MyPageHeading
+            icon="icon-video"
+            title="現在学習中のコース"
+            action={{ label: "学習履歴を見る", href: "/history" }}
+          />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-6">
+            {inProgress.map((course, i) => (
+              <InProgressCourseCard
+                key={course.id}
+                course={course}
+                highlight={i === 0}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* -------------------------------------------------- アカウント設定 */}
       <section className="grid grid-cols-1 items-start gap-8 px-4 lg:grid-cols-[1fr_380px] lg:gap-6 lg:px-0">

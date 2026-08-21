@@ -1,12 +1,29 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { dummyProgress } from "@/lib/progress/dummy";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
+import { setCourseFavorite, setLessonFavorite } from "@/lib/progress/actions";
 
 /**
  * お気に入りの状態管理。
- * Phase 1 は React state のみ（Phase 5 で Supabase の lesson_favorites /
- * course_favorites に置き換える。インターフェースはそのまま使える想定）。
+ *
+ * ■ データの流れ
+ *   初期値はサーバー（lesson_favorites / course_favorites）から props で受け取り、
+ *   トグルは画面をすぐ更新してから Server Action で永続化する（楽観的更新）。
+ *   保存に失敗したら元の状態へ戻すので、画面と DB がずれたままにならない。
+ *
+ * ■ なぜトグルではなく「設定」を送るか
+ *   Server Action へ渡すのは「押した結果どうなるべきか」という真偽値。
+ *   連打して通信の到着順が入れ替わっても、最後に送った状態へ収束する。
+ *
+ * ■ useFavorites() のインターフェースは Phase 1 から変えていない。
+ *   利用側（VideoCard / WatchView / CourseDetail / お気に入りページ）は変更不要。
  */
 type FavoritesValue = {
   lessonIds: string[];
@@ -19,25 +36,55 @@ type FavoritesValue = {
 
 const FavoritesContext = createContext<FavoritesValue | null>(null);
 
-export function FavoritesProvider({ children }: { children: React.ReactNode }) {
-  const [lessonIds, setLessonIds] = useState<string[]>(dummyProgress.favoriteLessonIds);
-  const [courseIds, setCourseIds] = useState<string[]>([]);
+/** 追加は先頭へ（お気に入りページの「保存日が新しい順」に合わせる） */
+function withFavorite(ids: string[], id: string, favorite: boolean): string[] {
+  const without = ids.filter((current) => current !== id);
+  return favorite ? [id, ...without] : without;
+}
 
-  const toggleLesson = useCallback((lessonId: string) => {
-    setLessonIds((prev) =>
-      prev.includes(lessonId)
-        ? prev.filter((id) => id !== lessonId)
-        : [...prev, lessonId],
-    );
-  }, []);
+export function FavoritesProvider({
+  initialLessonIds,
+  initialCourseIds,
+  children,
+}: {
+  initialLessonIds: string[];
+  initialCourseIds: string[];
+  children: React.ReactNode;
+}) {
+  const [lessonIds, setLessonIds] = useState<string[]>(initialLessonIds);
+  const [courseIds, setCourseIds] = useState<string[]>(initialCourseIds);
+  const [, startTransition] = useTransition();
 
-  const toggleCourse = useCallback((courseId: string) => {
-    setCourseIds((prev) =>
-      prev.includes(courseId)
-        ? prev.filter((id) => id !== courseId)
-        : [...prev, courseId],
-    );
-  }, []);
+  const toggleLesson = useCallback(
+    (lessonId: string) => {
+      const favorite = !lessonIds.includes(lessonId);
+      setLessonIds((prev) => withFavorite(prev, lessonId, favorite));
+
+      startTransition(async () => {
+        const result = await setLessonFavorite(lessonId, favorite);
+        if (!result.ok) {
+          // 保存できなかったので表示を元に戻す
+          setLessonIds((prev) => withFavorite(prev, lessonId, !favorite));
+        }
+      });
+    },
+    [lessonIds],
+  );
+
+  const toggleCourse = useCallback(
+    (courseId: string) => {
+      const favorite = !courseIds.includes(courseId);
+      setCourseIds((prev) => withFavorite(prev, courseId, favorite));
+
+      startTransition(async () => {
+        const result = await setCourseFavorite(courseId, favorite);
+        if (!result.ok) {
+          setCourseIds((prev) => withFavorite(prev, courseId, !favorite));
+        }
+      });
+    },
+    [courseIds],
+  );
 
   const value = useMemo<FavoritesValue>(
     () => ({

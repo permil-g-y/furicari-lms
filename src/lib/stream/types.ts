@@ -20,6 +20,15 @@ export type PlaybackSource =
       /** lessons.stream_video_id */
       videoId: string;
       /**
+       * 署名付きトークン。Cloudflare 公式プレイヤーの src に渡す。
+       * iframeUrl のパス部分と同じものだが、React プレイヤーは
+       * URL ではなくトークン単体を受け取るため別で持つ。
+       * **署名キーそのものではない**（有効期限付きの再生許可証）。
+       */
+      token: string;
+      /** customer-<CODE>.cloudflarestream.com の <CODE>。iframeUrl にも含まれる */
+      customerCode: string;
+      /**
        * Cloudflare 公式プレイヤーの埋め込み URL（署名付きトークン込み）。
        * URL のパス部分が Video UID ではなく **トークン** になっている点が肝で、
        * これにより Require Signed URLs が有効な動画を再生できる。

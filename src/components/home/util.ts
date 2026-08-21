@@ -1,9 +1,17 @@
 import type { ContentApi } from "@/lib/content/api";
-import { formatDuration } from "@/lib/content/format";
+import { formatDuration, jstDateKey } from "@/lib/content/format";
 
-/** "2026-08-18" → "2026/08/18" */
+/**
+ * "2026-08-18T00:00:00+00:00" → "2026/08/18"
+ *
+ * lessons.published_at は timestamptz なので、Supabase からは時刻とオフセットを
+ * 含んだ文字列が返る。ハイフンを置換するだけだと "2026/08/18T00:00:00+00:00" が
+ * そのまま画面に出てしまうため、日本時間の暦日へ落としてから整形する。
+ */
 export function formatDate(iso: string): string {
-  return iso.replace(/-/g, "/");
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso.replace(/-/g, "/");
+  return jstDateKey(date).replace(/-/g, "/");
 }
 
 /** タイムゾーンに依存しないよう、日付は常にローカルの 0 時として組み立てる */

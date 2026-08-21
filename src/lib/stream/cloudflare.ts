@@ -133,6 +133,8 @@ export function createCloudflareStreamProvider(): VideoStreamProvider {
         return {
           kind: "cloudflare-stream",
           videoId: streamVideoId,
+          token,
+          customerCode: config.customerCode,
           iframeUrl: `${base}/iframe`,
           hlsUrl: `${base}/manifest/video.m3u8`,
           thumbnailUrl: `${base}/thumbnails/thumbnail.jpg`,

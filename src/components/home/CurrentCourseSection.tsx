@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button, PlayTriangle } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Tag } from "@/components/ui/Tag";
+import { CourseStatusBadge, Tag } from "@/components/ui/Tag";
 import { VideoThumbnail } from "@/components/video/VideoThumbnail";
 import { formatLessonNumber, levelLabel } from "@/lib/content/format";
 import { getContent } from "@/lib/content/server";
@@ -51,7 +51,7 @@ export async function CurrentCourseSection() {
             <Link href={watchHref} className="block overflow-hidden rounded-14">
               <VideoThumbnail
                 tool={lesson.tool}
-                status="in_progress"
+                status={content.getLessonStatus(lessonId)}
                 percent={lessonPercent}
                 scale="md"
                 showPlay={false}
@@ -75,9 +75,12 @@ export async function CurrentCourseSection() {
 
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1.5">
-              <Tag tone="solid" height={24} paddingX={10} fontSize={11}>
-                学習中
-              </Tag>
+              <CourseStatusBadge
+                status={course.status}
+                height={24}
+                paddingX={10}
+                fontSize={11}
+              />
               <span className="min-w-0 truncate text-115 text-ink3">{chapterLine}</span>
             </div>
             <span className="text-16 font-bold leading-[1.5] text-ink">{lessonTitle}</span>
@@ -130,9 +133,12 @@ export async function CurrentCourseSection() {
         >
           <div className="flex flex-col gap-5">
             <div className="flex items-center gap-2.5">
-              <Tag tone="solid" height={28} paddingX={12} fontSize={12}>
-                学習中
-              </Tag>
+              <CourseStatusBadge
+                status={course.status}
+                height={28}
+                paddingX={12}
+                fontSize={12}
+              />
               <Tag
                 tone="white"
                 height={28}

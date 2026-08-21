@@ -12,6 +12,8 @@
 
 export type UserRole = "student" | "admin";
 export type ContentLevel = "beginner" | "intermediate" | "advanced";
+/** lesson_progress.status。@/lib/types の LessonStatus と同じ値を持つ */
+export type LessonProgressStatus = "not_started" | "in_progress" | "completed";
 
 export type Json =
   | string
@@ -55,6 +57,15 @@ export type ChapterInsert = {
   number: number;
   title: string;
   sort_order?: number;
+};
+
+export type LessonProgressInsert = {
+  user_id: string;
+  lesson_id: string;
+  status?: LessonProgressStatus;
+  position_seconds?: number;
+  completed_at?: string | null;
+  last_viewed_at?: string;
 };
 
 export type LessonInsert = {
@@ -229,6 +240,52 @@ export interface Database {
         Update: { expires_at?: string | null };
         Relationships: [];
       };
+
+      /* ---- Phase 5: 学習進捗 -------------------------------------------- */
+
+      /**
+       * 視聴状態。行が存在しないレッスンは not_started として扱うため、
+       * not_started の行は作らない。
+       */
+      lesson_progress: {
+        Row: TimestampColumns & {
+          user_id: string;
+          lesson_id: string;
+          status: LessonProgressStatus;
+          position_seconds: number;
+          completed_at: string | null;
+          last_viewed_at: string;
+        };
+        Insert: LessonProgressInsert;
+        Update: Partial<Omit<LessonProgressInsert, "user_id" | "lesson_id">>;
+        Relationships: [];
+      };
+
+      lesson_view_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          lesson_id: string;
+          viewed_at: string;
+        };
+        Insert: { user_id: string; lesson_id: string; viewed_at?: string };
+        Update: { viewed_at?: string };
+        Relationships: [];
+      };
+
+      lesson_favorites: {
+        Row: { user_id: string; lesson_id: string; created_at: string };
+        Insert: { user_id: string; lesson_id: string; created_at?: string };
+        Update: { created_at?: string };
+        Relationships: [];
+      };
+
+      course_favorites: {
+        Row: { user_id: string; course_id: string; created_at: string };
+        Insert: { user_id: string; course_id: string; created_at?: string };
+        Update: { created_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -237,6 +294,7 @@ export interface Database {
     Enums: {
       user_role: UserRole;
       content_level: ContentLevel;
+      lesson_status: LessonProgressStatus;
     };
     CompositeTypes: Record<never, never>;
   };
@@ -248,3 +306,8 @@ export type ChapterRow = Database["public"]["Tables"]["chapters"]["Row"];
 export type LessonRow = Database["public"]["Tables"]["lessons"]["Row"];
 export type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
 export type ToolRow = Database["public"]["Tables"]["tools"]["Row"];
+
+export type LessonProgressRow = Database["public"]["Tables"]["lesson_progress"]["Row"];
+export type LessonViewEventRow = Database["public"]["Tables"]["lesson_view_events"]["Row"];
+export type LessonFavoriteRow = Database["public"]["Tables"]["lesson_favorites"]["Row"];
+export type CourseFavoriteRow = Database["public"]["Tables"]["course_favorites"]["Row"];

@@ -7,10 +7,8 @@ import type {
   Tool,
   ToolKey,
 } from "@/lib/types";
-import {
-  dummyProgress,
-  type DummyProgressSource,
-} from "@/lib/progress/dummy";
+import { dummyProgress } from "@/lib/progress/dummy";
+import type { ProgressSource } from "@/lib/progress/types";
 import type { LessonProgress, LessonStatus } from "@/lib/types";
 
 /**
@@ -40,7 +38,7 @@ export type ContentApi = ReturnType<typeof createContentApi>;
 
 export function createContentApi(
   snapshot: ContentSnapshot,
-  progress: DummyProgressSource = dummyProgress,
+  progress: ProgressSource = dummyProgress,
 ) {
   const courseById = new Map(snapshot.courses.map((c) => [c.id, c]));
   const chapterById = new Map(snapshot.chapters.map((c) => [c.id, c]));

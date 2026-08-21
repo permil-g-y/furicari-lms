@@ -13,6 +13,16 @@ export async function HeroSection({ userName }: { userName: string }) {
   const course = content.getPrimaryCourse();
   const nextLesson = content.getLesson(content.getResumeLessonId(course));
 
+  /*
+   * まだ 1 本も視聴していないユーザーに「途中まで進んでいます」と出さない。
+   * 文章の見た目（2 行目のトーン）はそのままに、事実に合う方を選ぶ。
+   */
+  const lead = !nextLesson
+    ? ""
+    : content.getLessonStatus(nextLesson.id) === "not_started"
+      ? `まずは「${nextLesson.title}」から始めてみましょう。`
+      : `前回は「${nextLesson.title}」の途中まで進んでいます。`;
+
   return (
     <>
       {/* ---- Mobile ---- */}
@@ -46,7 +56,7 @@ export async function HeroSection({ userName }: { userName: string }) {
           <p className="text-155 leading-[1.8] text-ink-sub2">
             今日も少しずつスキルアップしましょう。
             <br />
-            前回は「{nextLesson?.title}」の途中まで進んでいます。
+            {lead}
           </p>
         </div>
         <div className="flex justify-end">

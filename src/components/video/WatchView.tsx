@@ -3,8 +3,11 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { Tag } from "@/components/ui/Tag";
+import { markLessonStarted, setLessonCompleted } from "@/lib/progress/actions";
+import { useProgressReporter } from "@/lib/progress/use-progress-reporter";
+import { useIsDesktopLayout } from "@/lib/use-desktop-layout";
 import { useFavorites } from "@/lib/favorites-context";
 import { useContent } from "@/lib/content/context";
 import {
@@ -36,10 +39,69 @@ export function WatchView({
   const totalInCourse = content.getLessonsByCourse(lesson.courseId).length;
   const { isLessonFavorite, toggleLesson } = useFavorites();
 
-  const [watched, setWatched] = useState(
-    content.getLessonStatus(lesson.id) === "completed",
-  );
   const [tab, setTab] = useState<"about" | "list">("about");
+  const [, startTransition] = useTransition();
+
+  /*
+   * 「視聴済み」の表示。
+   *
+   * 正はサーバー側の進捗で、押した直後だけ useOptimistic で先に見た目を変える。
+   * Server Action が終わると自動でサーバーの値へ戻るので、
+   * 保存に失敗した場合も画面が実データとずれたままにならない。
+   */
+  const serverWatched = content.getLessonStatus(lesson.id) === "completed";
+  const [optimisticWatched, showWatched] = useOptimistic(serverWatched);
+
+  /*
+   * 再生位置の保存（30 秒間隔 / 一時停止 / 離脱時）。
+   * 90% を超えたかどうかはサーバーが判定し、その結果が autoCompleted で返ってくる。
+   */
+  const reporter = useProgressReporter(lesson.id, progress.positionSeconds);
+
+  /*
+   * PC 用と Mobile 用のプレイヤーは両方 DOM に置かれている（Phase 1 の構造）。
+   * 本物の Cloudflare プレイヤーを同じトークンで 2 つ同時に初期化すると衝突して
+   * 再生できなくなるため、実際に表示されている側にだけ再生ソースを渡す。
+   * 渡されなかった側は従来どおりダミープレイヤーを描くが、CSS で隠れている。
+   */
+  const isDesktop = useIsDesktopLayout();
+  const desktopPlayback = isDesktop ? playback : undefined;
+  const mobilePlayback = isDesktop ? undefined : playback;
+
+  /**
+   * 自動完了は「手で外すまで」有効。
+   * 手動トグルを押したときだけリセットするので、
+   * 完了を取り消した直後に表示が完了へ戻ってしまうことはない。
+   */
+  const [autoCompletedShown, setAutoCompletedShown] = useState(true);
+  const watched = optimisticWatched || (reporter.autoCompleted && autoCompletedShown);
+
+  /*
+   * この動画を開いたことを記録する（in_progress + 学習履歴）。
+   *
+   * Server Component 側で記録しないのは、Next.js がリンクのホバーだけで
+   * プリフェッチするため。実際に画面へ出たときにだけ動くこの effect が正しい位置。
+   * レッスンが変わったときだけ 1 回送る。
+   */
+  const startedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (startedFor.current === lesson.id) return;
+    startedFor.current = lesson.id;
+    startTransition(async () => {
+      await markLessonStarted(lesson.id);
+    });
+  }, [lesson.id]);
+
+  /** 「視聴済みにする」（メモ化は React Compiler に任せる） */
+  const toggleWatched = () => {
+    const next = !watched;
+    // 手動操作を優先する。自動完了の表示はここで畳む
+    setAutoCompletedShown(next);
+    startTransition(async () => {
+      showWatched(next);
+      await setLessonCompleted(lesson.id, next);
+    });
+  };
 
   const favorite = isLessonFavorite(lesson.id);
   const numberLabel = formatLessonNumber(lesson.number);
@@ -77,12 +139,14 @@ export function WatchView({
       <div className="lg:hidden">
         <MobileVideoPlayer
           streamVideoId={lesson.streamVideoId}
-          playback={playback}
+          playback={mobilePlayback}
           tool={lesson.tool}
           backHref={courseHref}
           indexLabel={`${numberLabel} / ${totalInCourse}`}
           durationSeconds={lesson.durationSeconds}
           positionSeconds={progress.positionSeconds}
+          onTime={reporter.reportTime}
+          onPause={reporter.flushNow}
         />
 
         <div className="flex flex-col gap-2.5 border-b border-surface-alt bg-surface px-4 pb-3 pt-4">
@@ -106,7 +170,7 @@ export function WatchView({
           <div className="flex gap-2 pt-0.5">
             <button
               type="button"
-              onClick={() => setWatched((w) => !w)}
+              onClick={toggleWatched}
               className={`flex h-[46px] flex-1 cursor-pointer items-center justify-center gap-[7px] rounded-full text-135 font-bold ${
                 watched ? "bg-success-bg text-success" : "bg-brand-tint text-brand-deep"
               }`}
@@ -204,11 +268,13 @@ export function WatchView({
           <div className="flex flex-col gap-6">
             <VideoPlayer
               streamVideoId={lesson.streamVideoId}
-              playback={playback}
+              playback={desktopPlayback}
               tool={lesson.tool}
               topRightLabel={`${chapter ? `Chapter ${chapter.number} ・ ` : ""}${numberLabel} / ${totalInCourse}`}
               durationSeconds={lesson.durationSeconds}
               positionSeconds={progress.positionSeconds}
+              onTime={reporter.reportTime}
+              onPause={reporter.flushNow}
             />
 
             {/* 動画情報カード */}
@@ -252,7 +318,7 @@ export function WatchView({
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setWatched((w) => !w)}
+                  onClick={toggleWatched}
                   className={`flex h-12 cursor-pointer items-center gap-[9px] rounded-full px-[22px] font-rounded text-145 font-bold transition-colors ${
                     watched
                       ? "bg-success-bg text-success"

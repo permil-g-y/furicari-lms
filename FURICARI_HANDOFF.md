@@ -6,7 +6,7 @@
 > 記載内容はすべてリポジトリのコード・Git 履歴・Supabase migrations から確認した事実です。
 > 推測は含みません。実装済みと未実装は明確に分けています。
 >
-> 最終更新: Phase 4 完了時点（コミット `71aa130`）
+> 最終更新: Phase 5 完了時点（ブランチ `feature/phase5-learning-progress`）
 
 ---
 
@@ -34,7 +34,7 @@
 | Phase 2 | Supabase Auth・招待制認証 | ✅ 完了 |
 | Phase 3 | 教材データ（Course / Chapter / Lesson）の DB 化 | ✅ 完了 |
 | Phase 4 | Cloudflare Stream 接続（**テスト動画 1 本のみ**） | ✅ 完了 |
-| Phase 5 | 学習進捗・履歴・お気に入りの DB 化 | ⬜ 未着手 |
+| Phase 5 | 学習進捗・履歴・お気に入りの DB 化 | ✅ 完了 |
 | Phase 6 | 検索・お知らせ・マイページの実データ化 | ⬜ 未着手 |
 | Phase 7 | 管理機能（管理画面） | ⬜ 未着手 |
 | Phase 8 | テスト・セキュリティ・本番デプロイ | ⬜ 未着手 |
@@ -357,6 +357,45 @@ Supabase の標準 SMTP は**組織メンバーのアドレスにしか送信で
 - プレイヤー UI は**本物再生時のみ Cloudflare 公式プレイヤーの見た目**になる
   （Phase 1 のコントロールデザインへ寄せるのは後続 Phase）
 
+### Phase 5 — 学習進捗の DB 化（✅ 完了）
+
+**目的**：学習進捗・視聴履歴・お気に入りを Supabase へ移し、ダミー値を実データへ置き換える
+
+**実装したもの**
+- `lesson_progress` / `lesson_view_events` / `lesson_favorites` / `course_favorites`（migration 4 本目）
+- 進捗の集計を純粋関数へ分離（`src/lib/progress/compute.ts`）+ 自動テスト 17 件追加（計 30 件）
+- 再生位置の保存（**30 秒間隔** + 一時停止 + 離脱時の `sendBeacon`）
+- **90% 到達で自動完了** + 「視聴済みにする」による手動完了
+- お気に入りの永続化（Server Action + 楽観的更新）
+- 予期しないエラーの受け皿（`src/app/error.tsx`）
+
+**重要な設計判断**
+- **視聴開始の記録は Client の effect から送る。** Next.js はリンクのホバーだけで Server Component を
+  プリフェッチするため、サーバー側で記録すると「見ていない動画」の履歴が作られてしまう
+- **再生位置の保存だけ Route Handler**（`/api/progress`）。離脱時の `navigator.sendBeacon` は
+  URL にしか送れず、Server Action を呼べないため
+- **90% 判定はサーバー側。** クライアントが送るのは再生位置と実尺だけ
+- **位置は単調増加。** PC 用と Mobile 用のプレイヤーが同時に DOM 上へ存在するため、
+  非表示側から 0 が送られ得る。クライアントとサーバーの二重で弾く
+- **日付は必ず JST で扱う。** Supabase も Vercel も UTC で動くため、素直に変換すると
+  日本時間の朝 9 時より前の視聴が前日扱いになり連続学習日数が途切れる（`content/format.ts` に集約）
+
+**⚠️ 実ブラウザ検証で見つかった落とし穴（再発させないこと）**
+
+| 症状 | 原因 | 対処 |
+|---|---|---|
+| 動画が "An unknown error occurred" で再生できない | 再生 URL の `startTime` が**実尺を超えていた**。`lessons.duration_seconds` は編集者が入れる表示用の値で、アップロード済みファイルの実尺と食い違う（テスト動画は実尺 58 秒 / DB は 12:45） | `startTime` を URL で渡さず、再生開始後の `timeupdate` を起点にシークする |
+| 最後まで見ても完了にならない | 90% 判定の分母が DB の尺（765 秒）で、実尺 58 秒と 食い違う | プレイヤーが報告する実尺を分母にする |
+| 同上（別要因） | PC 用と Mobile 用の `<Stream>` を**同じ署名トークンで同時に初期化**して衝突 | `useIsDesktopLayout()` で**表示されている側にだけ**再生ソースを渡す |
+| `loadedmetadata` が発火しない | Cloudflare のプレイヤーは `preload="metadata"` でも再生開始まで通知しないことがある | 確実に届く `timeupdate` を起点にする |
+
+**検証結果（実ブラウザ・本番ビルド）**
+- 再開位置：20 秒へ設定 → 5 秒再生 → **27 秒** に更新（0 秒からなら保存が走らないため決定的）
+- 90% 自動完了：実尺 58 秒の動画を最後まで再生 → **completed**（DB の 765 秒基準なら 7.6% で完了し得ない）
+- 30 秒間隔の保存：`POST /api/progress` を実測で確認
+- 開発サーバーでは断続的にプレイヤーが失敗する（**React StrictMode の二重マウント**と考えられる）。
+  本番ビルドでは連続 3 回とも正常。加えて `onError` を自前の日本語表示へ接続済み
+
 ---
 
 ## 6. Cloudflare Stream 構成
@@ -608,22 +647,7 @@ Phase 3 は「教材の DB 化」がスコープ。進捗まで同時に触る�
 
 ## 12. 未実装・今後の Phase
 
-### Phase 5 — 学習進捗の DB 化（次にやるべきこと）
-
-**現状**：進捗はすべて `src/lib/progress/dummy.ts` のダミー値。
-
-**やること**
-- `lesson_progress`（user_id / lesson_id / status / position_seconds / completed_at / last_viewed_at）
-- `course_state`（user_id / course_id / last_lesson_id）＝「学習を続ける」の遷移先
-- `lesson_view_events`（学習履歴・連続学習日数・総学習時間の算出元）
-- `lesson_favorites` / `course_favorites`
-- 動画の視聴位置保存（10 秒間隔スロットル + 離脱時）、視聴完了判定（90% 超 or 明示ボタン）
-- RLS：`auth.uid() = user_id` のみ
-
-**差し替え方**：`DummyProgressSource` と同じ形を Supabase から組み立てて
-`createContentApi()` に渡すだけ。**画面側のコードは変更不要**な設計になっている。
-
-### Phase 6 — 検索・お知らせ・マイページ
+### Phase 6 — 検索・お知らせ・マイページ（次にやるべきこと）
 
 - `announcements` + 既読管理（`announcement_reads`）の DB 化
 - 検索の DB 化（まずは `ilike` + インデックスで十分）
@@ -648,7 +672,9 @@ Phase 3 は「教材の DB 化」がスコープ。進捗まで同時に触る�
 | 優先度 | 内容 |
 |---|---|
 | **高** | **Custom SMTP の設定**。標準 SMTP は組織メンバー宛にしか送れず、受講生に招待メールを送れない |
+| **高** | **`lessons.duration_seconds` を実際の動画の尺に合わせる。** 現在テスト動画は実尺 58 秒だが DB は 12:45。表示上の進捗率がずれるうえ、`startTime` の指定ミスで再生が壊れる原因になった（§5 Phase 5 参照） |
 | 中 | プレイヤーデザインを Phase 1 に寄せる（HLS マニフェスト URL は発行済みなので着手可能） |
+| 中 | 署名トークンの有効期限は 2 時間。タブを開いたまま放置すると再生に失敗する（`onError` で日本語表示に落として再読み込みを促してはいる） |
 | 中 | 残り 89 本の動画アップロードと `stream_video_id` 紐付け |
 | 低 | マイページの「パスワード最終更新日」は取得元が無くダミーのまま |
 | 低 | ログインの「ログイン状態を保持」チェックは意匠のみ（Supabase のセッションは既定で永続） |

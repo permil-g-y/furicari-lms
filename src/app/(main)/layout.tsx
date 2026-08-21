@@ -21,8 +21,11 @@ export default async function MainLayout({
   const [user, content] = await Promise.all([requireUser(), getContentBundle()]);
 
   return (
-    <ContentProvider snapshot={content.snapshot}>
-      <FavoritesProvider>
+    <ContentProvider snapshot={content.snapshot} progress={content.progress}>
+      <FavoritesProvider
+        initialLessonIds={content.progress.favoriteLessonIds}
+        initialCourseIds={content.progress.favoriteCourseIds}
+      >
         <AppShell
           user={{ displayName: user.displayName, avatarUrl: user.avatarUrl }}
         >

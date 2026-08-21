@@ -2,30 +2,57 @@ import "server-only";
 
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/auth/user";
 import { dummyProgress } from "@/lib/progress/dummy";
+import { loadProgressSource } from "@/lib/progress/server";
+import type { ProgressSource } from "@/lib/progress/types";
 import { createContentApi, type ContentApi, type ContentSnapshot } from "./api";
-import { buildLongDescriptions, buildSnapshot, type ContentRows } from "./snapshot";
+import {
+  buildIdMaps,
+  buildLongDescriptions,
+  buildProgressInputs,
+  buildSnapshot,
+  type ContentIdMaps,
+  type ContentRows,
+} from "./snapshot";
 import { buildMockSnapshot, mockLongDescriptions } from "./mock-fallback";
 
 /**
- * 教材データの取得（Supabase が primary source）。
+ * 教材データと学習進捗の取得（Supabase が primary source）。
  *
  * 件数が小さい（コース 6 / チャプター 25 / レッスン 90）ので、
  * ページごとに個別クエリを撃たず 1 リクエストにつき 1 回だけ全件取得して
  * メモリ上で引き当てる。React の cache() で同一リクエスト内は 1 回に集約されるため
- * N+1 が起きない。
+ * N+1 が起きない。学習進捗も同じリクエスト内で 1 回だけ取得する。
  */
 
 export type ContentBundle = {
   api: ContentApi;
   snapshot: ContentSnapshot;
+  /** 学習進捗。ContentProvider 経由でクライアントへも渡す（中身は slug のみ） */
+  progress: ProgressSource;
+  /**
+   * slug と uuid の対応表。**サーバー専用**。
+   * 進捗の書き込み（Server Action / Route Handler）で uuid が必要になる。
+   * クライアントへ渡してはいけない。
+   */
+  ids: ContentIdMaps;
   longDescriptions: Record<string, string>;
-  /** Supabase から取得できたか（false なら開発用フォールバック） */
+  /** 教材を Supabase から取得できたか（false なら開発用フォールバック） */
   fromDatabase: boolean;
+  /** 学習進捗を Supabase から取得できたか */
+  progressFromDatabase: boolean;
 };
 
 /** テーブル未作成（マイグレーション未適用）を表す PostgREST のコード */
 const TABLE_MISSING = "PGRST205";
+
+const emptyIdMaps = (): ContentIdMaps => ({
+  lessonUuidBySlug: new Map(),
+  lessonSlugByUuid: new Map(),
+  courseUuidBySlug: new Map(),
+  courseSlugByUuid: new Map(),
+});
 
 let warnedFallback = false;
 
@@ -49,6 +76,7 @@ async function loadContent(): Promise<ContentBundle> {
   if (tablesMissing || noContent) {
     // マイグレーション / シードが未適用でも開発を止めないためのフォールバック。
     // 本番ではここに入らない想定なので、必ず警告を出して気付けるようにする。
+    // この経路では進捗もダミーのまま（Claude Design の見た目を再現する）。
     if (!warnedFallback) {
       warnedFallback = true;
       console.warn(
@@ -60,8 +88,11 @@ async function loadContent(): Promise<ContentBundle> {
     return {
       api: createContentApi(snapshot, dummyProgress),
       snapshot,
+      progress: dummyProgress,
+      ids: emptyIdMaps(),
       longDescriptions: mockLongDescriptions,
       fromDatabase: false,
+      progressFromDatabase: false,
     };
   }
 
@@ -80,13 +111,30 @@ async function loadContent(): Promise<ContentBundle> {
     lessons: lessons.data ?? [],
   };
 
-  const snapshot = buildSnapshot(rows, dummyProgress);
+  const ids = buildIdMaps(rows);
+  const progressInputs = buildProgressInputs(rows);
+  const authUser = await getAuthUser();
+
+  const { progress, fromDatabase: progressFromDatabase } = await loadProgressSource({
+    supabase,
+    userId: authUser?.id ?? null,
+    maps: ids,
+    lessons: progressInputs.lessons,
+    courseIds: progressInputs.courseIds,
+  });
+
+  // Course 型の completedLessons / status / nextLessonId は進捗由来なので、
+  // スナップショットの組み立ては進捗の集計より後に行う。
+  const snapshot = buildSnapshot(rows, progress);
 
   return {
-    api: createContentApi(snapshot, dummyProgress),
+    api: createContentApi(snapshot, progress),
     snapshot,
+    progress,
+    ids,
     longDescriptions: buildLongDescriptions(rows.courses),
     fromDatabase: true,
+    progressFromDatabase,
   };
 }
 

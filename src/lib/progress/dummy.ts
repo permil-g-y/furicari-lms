@@ -1,55 +1,36 @@
-import type { CourseStatus, LearningStats, LessonProgress, ViewEvent } from "@/lib/types";
 import {
+  favoriteCourseIds,
   favoriteLessonIds,
   learningStats,
   lessonProgress,
   todayLabel,
   viewEvents,
 } from "@/lib/mock/user";
+import {
+  newLessonIds,
+  recommendedCourseIds,
+  videoListOrder,
+} from "@/lib/content/curation";
+import type { ProgressSource } from "./types";
 
 /**
  * 学習進捗のダミーデータ。
  *
- * ■ Phase 3 の境界
- *   教材（コース / チャプター / レッスン）は Supabase が唯一の source of truth。
- *   一方でここにある「進捗」は **まだダミー** で、Phase 5 で
- *   lesson_progress / course_state テーブルへ差し替える。
+ * ■ いつ使われるか
+ *   マイグレーション未適用など、Supabase から教材を取得できないときの
+ *   **開発用フォールバック専用**（src/lib/content/mock-fallback.ts と対になる）。
+ *   通常の経路では src/lib/progress/server.ts が Supabase から組み立てる。
  *
- * ■ Phase 5 での差し替え方
- *   このファイルが公開している DummyProgressSource と同じ形を
- *   Supabase から組み立てて createContentApi に渡すだけでよい。
- *   画面側のコードは変更不要。
+ * ■ 値の意味
+ *   Claude Design の画面に出ていた表示（「44%」「18本中8本」など）を
+ *   再現するための固定値。実際の視聴状況とは無関係。
+ *   src/lib/content/content.test.ts はこの値を基準に
+ *   「教材と進捗の境界」を検証しているため、値を変えるとテストが落ちる。
  */
-export type DummyProgressSource = {
-  /** 動画単位の視聴状態 */
-  lessonProgress: LessonProgress[];
-  /** コースの受講状態 */
-  courseStatus: Record<string, CourseStatus>;
-  /**
-   * コースの視聴済み本数。
-   * Claude Design 上の表示（「18本中 8本」など）を再現するための固定値。
-   * Phase 5 では lesson_progress の集計に置き換わる。
-   */
-  completedLessonsByCourse: Record<string, number>;
-  /** 「学習を続ける」の遷移先 */
-  nextLessonByCourse: Record<string, string>;
-  favoriteLessonIds: string[];
-  viewEvents: ViewEvent[];
-  learningStats: LearningStats;
-  todayLabel: string;
-  /** TOP「続きから学ぶ」の並び */
-  resumeLessonIds: string[];
-  /** TOP「新着動画」の並び */
-  newLessonIds: string[];
-  /** TOP「あなたにおすすめのコース」の並び */
-  recommendedCourseIds: string[];
-  /** 動画一覧のデフォルト表示順（先頭 9 件が Claude Design の 1 ページ目） */
-  videoListOrder: string[];
-};
-
-export const dummyProgress: DummyProgressSource = {
+export const dummyProgress: ProgressSource = {
   lessonProgress,
   favoriteLessonIds,
+  favoriteCourseIds,
   viewEvents,
   learningStats,
   todayLabel,
@@ -83,29 +64,8 @@ export const dummyProgress: DummyProgressSource = {
 
   resumeLessonIds: ["premiere-practice-05", "capcut-practice-02", "ai-editing-05"],
 
-  newLessonIds: [
-    "ai-editing-09",
-    "ai-editing-04",
-    "premiere-practice-10",
-    "ai-client-acquisition-10",
-  ],
-
-  recommendedCourseIds: [
-    "capcut-practice",
-    "ai-client-work",
-    "ai-editing",
-    "ai-client-acquisition",
-  ],
-
-  videoListOrder: [
-    "premiere-practice-05",
-    "premiere-practice-04",
-    "premiere-practice-03",
-    "premiere-practice-10",
-    "ai-editing-09",
-    "ai-editing-04",
-    "ai-editing-05",
-    "capcut-practice-02",
-    "ai-client-acquisition-10",
-  ],
+  // キュレーションは進捗ではないので、実データ経路と同じ定義を共有する
+  newLessonIds,
+  recommendedCourseIds,
+  videoListOrder,
 };

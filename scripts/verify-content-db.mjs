@@ -1,5 +1,6 @@
 /**
- * Supabase に Phase 3 のテーブルとシードが入っているかを確認する。
+ * Supabase にアプリが必要とするテーブルが揃っているかを確認する。
+ * Phase 3（教材）に加えて Phase 5（学習進捗）のテーブルも対象にする。
  *
  *   node scripts/verify-content-db.mjs
  *
@@ -28,6 +29,7 @@ if (!url || !key) {
 }
 
 const tables = [
+  // Phase 2 / 3: 認証と教材
   "profiles",
   "categories",
   "tools",
@@ -35,6 +37,11 @@ const tables = [
   "chapters",
   "lessons",
   "user_course_enrollments",
+  // Phase 5: 学習進捗
+  "lesson_progress",
+  "lesson_view_events",
+  "lesson_favorites",
+  "course_favorites",
 ];
 
 let allPresent = true;

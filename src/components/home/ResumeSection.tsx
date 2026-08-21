@@ -14,6 +14,14 @@ export async function ResumeSection() {
   const content = await getContent();
   const lessons = content.getLessons(content.resumeLessonIds);
 
+  /*
+   * 視聴途中の動画が 1 本も無いとき（学習を始めたばかりのユーザー）は
+   * セクションごと出さない。見出しだけが残って中身が空になるのを避けるため。
+   * お気に入り・学習履歴には元から空状態のメッセージがあるが、
+   * このセクションには Claude Design 上その用意が無い。
+   */
+  if (lessons.length === 0) return null;
+
   return (
     <>
       {/* ---- Mobile ---- */}

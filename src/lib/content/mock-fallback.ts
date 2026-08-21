@@ -1,6 +1,6 @@
 import { allChapters, allLessons, courseLongDescription, courses } from "@/lib/mock/courses";
 import { categories, tools, toolFilterOrder } from "@/lib/mock/taxonomy";
-import type { DummyProgressSource } from "@/lib/progress/dummy";
+import type { ProgressSource } from "@/lib/progress/types";
 import type { ContentSnapshot } from "./api";
 
 /**
@@ -13,7 +13,7 @@ import type { ContentSnapshot } from "./api";
  * Seed SQL（supabase/seed/0001_content.sql）は同じ src/lib/mock から
  * 自動生成しているため、フォールバックと DB の内容は一致する。
  */
-export function buildMockSnapshot(progress: DummyProgressSource): ContentSnapshot {
+export function buildMockSnapshot(progress: ProgressSource): ContentSnapshot {
   // DB 経由（buildSnapshot）と完全に同じ並びにする。
   // mock の配列は定義を連結しただけの偶発的な順序なので、
   // 「コースの並び順 → コース内の並び順」で並べ直す。

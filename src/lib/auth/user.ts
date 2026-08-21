@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, UserRole } from "@/lib/supabase/database.types";
@@ -47,23 +48,29 @@ export function fallbackDisplayName(email: string): string {
  *
  * getSession() はサーバー側で信用してはいけないため、JWT の署名を検証する
  * getClaims() を使う。
+ *
+ * cache() で包んでいるのは、1 リクエストの中で複数の入口
+ * （レイアウトの requireUser・教材取得・Server Action）から呼ばれても
+ * 検証を 1 回に集約するため。Cookie はリクエスト中に変わらないので安全。
  */
-export async function getAuthUser(): Promise<{ id: string; email: string } | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
+export const getAuthUser = cache(
+  async (): Promise<{ id: string; email: string } | null> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getClaims();
 
-  const claims = data?.claims;
-  if (error || !claims?.sub) return null;
+    const claims = data?.claims;
+    if (error || !claims?.sub) return null;
 
-  let email = typeof claims.email === "string" ? claims.email : "";
-  if (!email) {
-    // email クレームが無い設定のプロジェクト向けフォールバック
-    const { data: userData } = await supabase.auth.getUser();
-    email = userData.user?.email ?? "";
-  }
+    let email = typeof claims.email === "string" ? claims.email : "";
+    if (!email) {
+      // email クレームが無い設定のプロジェクト向けフォールバック
+      const { data: userData } = await supabase.auth.getUser();
+      email = userData.user?.email ?? "";
+    }
 
-  return { id: claims.sub, email };
-}
+    return { id: claims.sub, email };
+  },
+);
 
 /** profiles を 1 件取得する（RLS により自分の行しか取得できない） */
 export async function getProfile(userId: string): Promise<Profile | null> {

@@ -30,6 +30,8 @@ export function VideoPlayer({
   topRightLabel,
   durationSeconds,
   positionSeconds,
+  onTime,
+  onPause,
 }: {
   /** Cloudflare Stream の Video UID（DB 由来。NULL ならダミー） */
   streamVideoId?: string;
@@ -40,6 +42,10 @@ export function VideoPlayer({
   topRightLabel: string;
   durationSeconds: number;
   positionSeconds: number;
+  /** 再生位置が進んだ（Phase 5） */
+  onTime?: (seconds: number) => void;
+  /** 一時停止した（Phase 5） */
+  onPause?: () => void;
 }) {
   const [playing, setPlaying] = useState(false);
   const { tools } = useContent();
@@ -53,7 +59,13 @@ export function VideoPlayer({
   if (playback && playback.kind !== "placeholder") {
     return (
       <div className="overflow-hidden rounded-card bg-player shadow-player">
-        <StreamStage playback={playback} title={topRightLabel} />
+        <StreamStage
+          playback={playback}
+          title={topRightLabel}
+          startSeconds={positionSeconds}
+          onTime={onTime}
+          onPause={onPause}
+        />
       </div>
     );
   }
