@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AnnouncementBody } from "@/components/news/AnnouncementBody";
+import { MarkAsRead } from "@/components/news/MarkAsRead";
 import { Icon } from "@/components/ui/Icon";
 import {
   announcementCategoryLabel,
   announcementCategoryStyle,
-  getAnnouncement,
-  getNextAnnouncement,
-} from "@/lib/mock";
+} from "@/lib/news/presentation";
+import { getAnnouncement, getNextAnnouncement } from "@/lib/news/server";
 
 export default async function NewsDetailPage({
   params,
@@ -15,14 +15,16 @@ export default async function NewsDetailPage({
   params: Promise<{ newsId: string }>;
 }) {
   const { newsId } = await params;
-  const announcement = getAnnouncement(newsId);
+  const announcement = await getAnnouncement(newsId);
   if (!announcement) notFound();
 
   const tone = announcementCategoryStyle[announcement.category];
-  const next = getNextAnnouncement(announcement.id);
+  const next = await getNextAnnouncement(announcement.id);
 
   return (
     <main className="mx-auto flex w-full max-w-page flex-col gap-4 px-4 pt-4 pb-2 lg:gap-6 lg:px-10 lg:pt-8 lg:pb-20">
+      {/* 実際に画面へ出たときにだけ既読にする（プリフェッチでは既読にしない） */}
+      <MarkAsRead slug={announcement.id} />
       {/* パンくず（Mobile は MobileHeader の戻るが担当するため非表示） */}
       <nav className="hidden items-center gap-2 text-13 text-ink4 lg:flex">
         <Link href="/news" className="text-ink3 hover:text-brand-deep">

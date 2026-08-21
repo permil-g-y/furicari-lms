@@ -21,6 +21,49 @@ import { CourseCurriculum } from "./CourseCurriculum";
  * PC: パンくず → ヒーロー → このコースで学べること → カリキュラム
  * Mobile: ヒーロー → 学習進捗カード → 学べること → カリキュラム → 下部固定 CTA
  */
+/**
+ * 未受講コースで再生 CTA の代わりに出す案内。
+ *
+ * 新しい色・角丸・影は足さず、既存のトークンだけで作っている。
+ * カリキュラムは見えるので「何が学べるか」は確認できる。
+ */
+/**
+ * 「次に見る動画」の外枠。
+ *
+ * 未受講のコースでは再生ページへ進ませないので、リンクではなくただの箱にする。
+ * 余白・角丸・枠線は受講状態で変えない。
+ * （サーバー側でも /watch は拒否するが、押しても戻ってくるだけの導線を残さない）
+ */
+function ResumeLink({
+  enrolled,
+  href,
+  className,
+  children,
+}: {
+  enrolled: boolean;
+  href: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (!enrolled) return <div className={className}>{children}</div>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+function LockedNotice() {
+  return (
+    <div className="flex flex-col gap-1 rounded-card border border-line bg-page px-5 py-4">
+      <span className="text-135 font-bold text-ink">このコースはまだ受講していません</span>
+      <span className="text-125 leading-[1.7] text-ink3">
+        内容は自由にご覧いただけます。受講のお手続きは運営までお問い合わせください。
+      </span>
+    </div>
+  );
+}
+
 export function CourseDetail({
   course,
   longDescription,
@@ -65,14 +108,14 @@ export function CourseDetail({
         <main className="mx-auto flex w-full max-w-[560px] flex-col gap-7 pb-[128px] pt-4">
           <section className="flex flex-col gap-3.5 px-4">
             {resumeLesson && (
-              <Link href={watchHref} className="block">
+              <ResumeLink enrolled={course.isEnrolled} href={watchHref} className="block">
                 <VideoThumbnail
                   tool={resumeLesson.tool}
                   scale="md"
                   showDuration={false}
                   className="overflow-hidden rounded-16"
                 />
-              </Link>
+              </ResumeLink>
             )}
 
             <div className="flex flex-col gap-2.5">
@@ -178,12 +221,16 @@ export function CourseDetail({
                 {percent}%
               </span>
             </div>
-            <Button href={watchHref} size={54} block>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
-                <PlayTriangle size={8} />
-              </span>
-              学習を続ける
-            </Button>
+            {course.isEnrolled ? (
+              <Button href={watchHref} size={54} block>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                  <PlayTriangle size={8} />
+                </span>
+                学習を続ける
+              </Button>
+            ) : (
+              <LockedNotice />
+            )}
           </div>
         </div>
       </div>
@@ -226,7 +273,8 @@ export function CourseDetail({
             </div>
 
             {resumeLesson && (
-              <Link
+              <ResumeLink
+                enrolled={course.isEnrolled}
                 href={watchHref}
                 className="flex items-center gap-3.5 rounded-16 border border-line bg-surface px-[18px] py-4"
               >
@@ -244,7 +292,7 @@ export function CourseDetail({
                 <span className="ml-auto shrink-0 text-13 text-ink3">
                   残り {remainingLabel}
                 </span>
-              </Link>
+              </ResumeLink>
             )}
 
             <div className="flex flex-col gap-[9px]">
@@ -261,12 +309,16 @@ export function CourseDetail({
             </div>
 
             <div className="flex items-center gap-3.5 pt-1">
-              <Button href={watchHref} size={56}>
-                <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white/20">
-                  <PlayTriangle size={8} />
-                </span>
-                学習を続ける
-              </Button>
+              {course.isEnrolled ? (
+                <Button href={watchHref} size={56}>
+                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white/20">
+                    <PlayTriangle size={8} />
+                  </span>
+                  学習を続ける
+                </Button>
+              ) : (
+                <LockedNotice />
+              )}
 
               <button
                 type="button"
@@ -281,14 +333,14 @@ export function CourseDetail({
 
           <div className="flex flex-col gap-3.5">
             {resumeLesson && (
-              <Link href={watchHref} className="block">
+              <ResumeLink enrolled={course.isEnrolled} href={watchHref} className="block">
                 <VideoThumbnail
                   tool={resumeLesson.tool}
                   durationSeconds={resumeLesson.durationSeconds}
                   scale="lg"
                   className="overflow-hidden rounded-18 shadow-panel"
                 />
-              </Link>
+              </ResumeLink>
             )}
             {remainingLessons > 0 && (
               <div className="flex items-center gap-2.5 px-1">

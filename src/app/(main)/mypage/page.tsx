@@ -6,9 +6,11 @@ import { StatCard, StatUnit } from "@/components/mypage/StatCard";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Tag } from "@/components/ui/Tag";
-import { currentUser } from "@/lib/mock";
 import { getContent } from "@/lib/content/server";
 import { requireUser } from "@/lib/auth/user";
+
+/** アバター画像が未設定のときに出すアイコン（Storage の導入は別 Phase） */
+const FALLBACK_AVATAR_ICON = "icon-user";
 
 /** 「14時間20分」を 14 / 20 に分解する（分解できない場合はそのまま出す） */
 function splitWatchTime(label: string): { hours: string; minutes: string } | null {
@@ -73,9 +75,9 @@ export default async function MyPage() {
               />
             ) : (
               <>
-                <Icon name={currentUser.avatarIcon} size={40} className="lg:hidden" />
+                <Icon name={FALLBACK_AVATAR_ICON} size={40} className="lg:hidden" />
                 <Icon
-                  name={currentUser.avatarIcon}
+                  name={FALLBACK_AVATAR_ICON}
                   size={52}
                   className="hidden lg:block"
                 />

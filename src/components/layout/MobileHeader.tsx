@@ -8,9 +8,12 @@ import { Icon, Logo, SearchGlyph } from "@/components/ui/Icon";
 export function MobileHeader({
   title,
   back,
+  hasUnreadNews = false,
 }: {
   title?: string;
   back?: string;
+  /** 未読のお知らせがあるか。無いときはドットを出さない */
+  hasUnreadNews?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-white/96 backdrop-blur-[8px]">
@@ -39,7 +42,7 @@ export function MobileHeader({
 
         <div className="ml-auto flex items-center gap-2">
           <Link
-            href="/videos"
+            href="/search"
             aria-label="検索"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-page"
           >
@@ -50,7 +53,9 @@ export function MobileHeader({
             className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-page"
           >
             <Icon name="icon-chat" size={20} alt="お知らせ" />
-            <span className="absolute right-2 top-[7px] h-2 w-2 rounded-full border-2 border-white bg-alert" />
+            {hasUnreadNews && (
+              <span className="absolute right-2 top-[7px] h-2 w-2 rounded-full border-2 border-white bg-alert" />
+            )}
           </Link>
         </div>
       </div>

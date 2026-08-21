@@ -101,9 +101,39 @@ function lessonBadge(status: LessonStatus): {
   return { label: "未視聴", className: "border border-line bg-page text-ink4" };
 }
 
+/**
+ * レッスン 1 行の外枠。
+ *
+ * 受講中なら再生ページへのリンク、未受講なら同じ見た目のただの行にする。
+ * 見た目（余白・角丸・枠線）は受講状態で変えない。
+ */
+function LessonRow({
+  enrolled,
+  lessonId,
+  className,
+  children,
+}: {
+  enrolled: boolean;
+  lessonId: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (!enrolled) return <div className={className}>{children}</div>;
+  return (
+    <Link href={`/watch/${lessonId}`} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 function CurriculumPc({ courseId }: { courseId: string }) {
   const content = useContent();
   const chapters = content.getChaptersByCourse(courseId);
+  /*
+   * 未受講のコースでは、カリキュラムは見えるが再生ページへは進ませない。
+   * 直打ちはサーバー側でも拒否するので、ここはあくまで導線の整理。
+   */
+  const enrolled = content.getCourse(courseId)?.isEnrolled ?? false;
   const { open, toggle } = useOpenChapters(chapters, content);
 
   return (
@@ -167,9 +197,10 @@ function CurriculumPc({ courseId }: { courseId: string }) {
                   const badge = lessonBadge(status);
 
                   return (
-                    <Link
+                    <LessonRow
                       key={lesson.id}
-                      href={`/watch/${lesson.id}`}
+                      enrolled={enrolled}
+                      lessonId={lesson.id}
                       className={`flex items-center gap-3.5 rounded-14 px-4 py-3.5 ${
                         current
                           ? "border border-brand-tint2 bg-brand-tint"
@@ -213,7 +244,7 @@ function CurriculumPc({ courseId }: { courseId: string }) {
                       <span className="w-[52px] shrink-0 text-right text-125 text-ink4">
                         {formatDuration(lesson.durationSeconds)}
                       </span>
-                    </Link>
+                    </LessonRow>
                   );
                 })}
               </div>
@@ -231,6 +262,11 @@ function CurriculumPc({ courseId }: { courseId: string }) {
 function CurriculumMobile({ courseId }: { courseId: string }) {
   const content = useContent();
   const chapters = content.getChaptersByCourse(courseId);
+  /*
+   * 未受講のコースでは、カリキュラムは見えるが再生ページへは進ませない。
+   * 直打ちはサーバー側でも拒否するので、ここはあくまで導線の整理。
+   */
+  const enrolled = content.getCourse(courseId)?.isEnrolled ?? false;
   const { open, toggle } = useOpenChapters(chapters, content);
 
   return (
@@ -288,9 +324,10 @@ function CurriculumMobile({ courseId }: { courseId: string }) {
                   const badge = lessonBadge(status);
 
                   return (
-                    <Link
+                    <LessonRow
                       key={lesson.id}
-                      href={`/watch/${lesson.id}`}
+                      enrolled={enrolled}
+                      lessonId={lesson.id}
                       className={`flex items-center gap-[11px] rounded-14 px-2.5 py-[11px] ${
                         current
                           ? "border border-brand-tint2 bg-brand-tint"
@@ -332,7 +369,7 @@ function CurriculumMobile({ courseId }: { courseId: string }) {
                           </span>
                         </div>
                       </div>
-                    </Link>
+                    </LessonRow>
                   );
                 })}
               </div>

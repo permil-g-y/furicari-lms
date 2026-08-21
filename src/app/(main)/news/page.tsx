@@ -7,8 +7,8 @@ import { Icon } from "@/components/ui/Icon";
 import {
   announcementCategoryLabel,
   announcementCategoryStyle,
-  announcements,
-} from "@/lib/mock";
+} from "@/lib/news/presentation";
+import { useAnnouncements } from "@/lib/news/context";
 import type { AnnouncementCategory } from "@/lib/types";
 
 type FilterKey = "all" | AnnouncementCategory;
@@ -69,6 +69,7 @@ function NewBadge({ size = "pc" }: { size?: "pc" | "mobile" }) {
 }
 
 export default function NewsPage() {
+  const announcements = useAnnouncements();
   const [category, setCategory] = useState<FilterKey>("all");
   const [page, setPage] = useState(1);
 
@@ -77,7 +78,7 @@ export default function NewsPage() {
       category === "all"
         ? announcements
         : announcements.filter((a) => a.category === category),
-    [category],
+    [announcements, category],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

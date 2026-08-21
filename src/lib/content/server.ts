@@ -2,7 +2,9 @@ import "server-only";
 
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthUser } from "@/lib/auth/user";
+import { getAuthUser, getProfile } from "@/lib/auth/user";
+import { loadEnrollmentAccess } from "@/lib/enrollment/server";
+import type { EnrollmentAccess } from "@/lib/enrollment/access";
 import { dummyProgress } from "@/lib/progress/dummy";
 import { loadProgressSource } from "@/lib/progress/server";
 import type { ProgressSource } from "@/lib/progress/types";
@@ -42,6 +44,11 @@ export type ContentBundle = {
   fromDatabase: boolean;
   /** 学習進捗を Supabase から取得できたか */
   progressFromDatabase: boolean;
+  /**
+   * 受講権限。**サーバー専用**。
+   * watch ページが署名トークンを発行する前の判定に使う。
+   */
+  access: EnrollmentAccess;
 };
 
 /** テーブル未作成（マイグレーション未適用）を表す PostgREST のコード */
@@ -93,6 +100,7 @@ async function loadContent(): Promise<ContentBundle> {
       longDescriptions: mockLongDescriptions,
       fromDatabase: false,
       progressFromDatabase: false,
+      access: { enrolledCourseIds: new Set(), isAdmin: true },
     };
   }
 
@@ -115,6 +123,15 @@ async function loadContent(): Promise<ContentBundle> {
   const progressInputs = buildProgressInputs(rows);
   const authUser = await getAuthUser();
 
+  // 受講権限（Phase 6）。admin は全コース閲覧可
+  const profile = authUser ? await getProfile(authUser.id) : null;
+  const access = await loadEnrollmentAccess({
+    supabase,
+    userId: authUser?.id ?? null,
+    isAdmin: profile?.role === "admin",
+    maps: ids,
+  });
+
   const { progress, fromDatabase: progressFromDatabase } = await loadProgressSource({
     supabase,
     userId: authUser?.id ?? null,
@@ -125,7 +142,7 @@ async function loadContent(): Promise<ContentBundle> {
 
   // Course 型の completedLessons / status / nextLessonId は進捗由来なので、
   // スナップショットの組み立ては進捗の集計より後に行う。
-  const snapshot = buildSnapshot(rows, progress);
+  const snapshot = buildSnapshot(rows, progress, access);
 
   return {
     api: createContentApi(snapshot, progress),
@@ -135,6 +152,7 @@ async function loadContent(): Promise<ContentBundle> {
     longDescriptions: buildLongDescriptions(rows.courses),
     fromDatabase: true,
     progressFromDatabase,
+    access,
   };
 }
 

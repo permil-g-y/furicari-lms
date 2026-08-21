@@ -14,6 +14,12 @@ export type UserRole = "student" | "admin";
 export type ContentLevel = "beginner" | "intermediate" | "advanced";
 /** lesson_progress.status。@/lib/types の LessonStatus と同じ値を持つ */
 export type LessonProgressStatus = "not_started" | "in_progress" | "completed";
+/** announcements.category。@/lib/types の AnnouncementCategory と同じ値を持つ */
+export type AnnouncementCategoryDb =
+  | "new_course"
+  | "event"
+  | "update"
+  | "maintenance";
 
 export type Json =
   | string
@@ -57,6 +63,16 @@ export type ChapterInsert = {
   number: number;
   title: string;
   sort_order?: number;
+};
+
+export type AnnouncementInsert = {
+  slug: string;
+  title: string;
+  category: AnnouncementCategoryDb;
+  body?: Json;
+  related_links?: Json;
+  published_at?: string;
+  is_published?: boolean;
 };
 
 export type LessonProgressInsert = {
@@ -286,6 +302,33 @@ export interface Database {
         Update: { created_at?: string };
         Relationships: [];
       };
+
+      /* ---- Phase 6: お知らせ ---------------------------------------------- */
+
+      announcements: {
+        Row: TimestampColumns & {
+          id: string;
+          slug: string;
+          title: string;
+          category: AnnouncementCategoryDb;
+          /** AnnouncementBlock[] */
+          body: Json;
+          /** [{icon, label, href}] */
+          related_links: Json;
+          published_at: string;
+          is_published: boolean;
+        };
+        Insert: AnnouncementInsert;
+        Update: Partial<AnnouncementInsert>;
+        Relationships: [];
+      };
+
+      announcement_reads: {
+        Row: { user_id: string; announcement_id: string; read_at: string };
+        Insert: { user_id: string; announcement_id: string; read_at?: string };
+        Update: { read_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -295,6 +338,7 @@ export interface Database {
       user_role: UserRole;
       content_level: ContentLevel;
       lesson_status: LessonProgressStatus;
+      announcement_category: AnnouncementCategoryDb;
     };
     CompositeTypes: Record<never, never>;
   };
@@ -311,3 +355,5 @@ export type LessonProgressRow = Database["public"]["Tables"]["lesson_progress"][
 export type LessonViewEventRow = Database["public"]["Tables"]["lesson_view_events"]["Row"];
 export type LessonFavoriteRow = Database["public"]["Tables"]["lesson_favorites"]["Row"];
 export type CourseFavoriteRow = Database["public"]["Tables"]["course_favorites"]["Row"];
+export type AnnouncementRow = Database["public"]["Tables"]["announcements"]["Row"];
+export type AnnouncementReadRow = Database["public"]["Tables"]["announcement_reads"]["Row"];

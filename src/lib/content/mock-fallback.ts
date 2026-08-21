@@ -43,6 +43,8 @@ export function buildMockSnapshot(progress: ProgressSource): ContentSnapshot {
       completedLessons: progress.completedLessonsByCourse[course.id] ?? 0,
       status: progress.courseStatus[course.id] ?? "not_started",
       nextLessonId: progress.nextLessonByCourse[course.id],
+      // 開発用フォールバックでは受講制御をかけない（教材が無い環境のため）
+      isEnrolled: true,
     })),
     chapters: [...allChapters].sort(byCourseThenOrder),
     lessons: [...allLessons].sort(byCourseThenOrder),

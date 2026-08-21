@@ -346,6 +346,8 @@ export const courses: Course[] = [
       },
     ],
     sortOrder: 1,
+    // Phase 1 のダミー教材。受講制御はフォールバック環境ではかけない
+    isEnrolled: true,
   },
   {
     id: BASIC,
@@ -360,6 +362,8 @@ export const courses: Course[] = [
     status: "completed",
     nextLessonId: `${BASIC}-01`,
     sortOrder: 2,
+    // Phase 1 のダミー教材。受講制御はフォールバック環境ではかけない
+    isEnrolled: true,
   },
   {
     id: AI,
@@ -375,6 +379,8 @@ export const courses: Course[] = [
     status: "in_progress",
     nextLessonId: `${AI}-04`,
     sortOrder: 3,
+    // Phase 1 のダミー教材。受講制御はフォールバック環境ではかけない
+    isEnrolled: true,
   },
   {
     id: CC,
@@ -390,6 +396,8 @@ export const courses: Course[] = [
     status: "not_started",
     nextLessonId: `${CC}-01`,
     sortOrder: 4,
+    // Phase 1 のダミー教材。受講制御はフォールバック環境ではかけない
+    isEnrolled: true,
   },
   {
     id: ACQ,
@@ -405,6 +413,8 @@ export const courses: Course[] = [
     status: "not_started",
     nextLessonId: `${ACQ}-01`,
     sortOrder: 5,
+    // Phase 1 のダミー教材。受講制御はフォールバック環境ではかけない
+    isEnrolled: true,
   },
   {
     id: CW,
@@ -420,6 +430,8 @@ export const courses: Course[] = [
     status: "not_started",
     nextLessonId: `${CW}-01`,
     sortOrder: 6,
+    // Phase 1 のダミー教材。受講制御はフォールバック環境ではかけない
+    isEnrolled: true,
   },
 ];
 
