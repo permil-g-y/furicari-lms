@@ -19,9 +19,13 @@
  *     - Client Component … `useAnnouncements()` (@/lib/news/context)
  *     - 表示用の定数     … @/lib/news/presentation
  *
+ * ■ Phase 6-D でここから消えたもの
+ *   マイページのユーザー情報はすべて Supabase Auth / profiles の実データになった。
+ *   （表示名・メール・通知設定。パスワード最終更新日は取得元が無いため表示自体を廃止）
+ *
  * ■ ここに残っているもの
- *   - ユーザーのダミー項目（取得元が無いもの）
- *   - 学習進捗の生データ（@/lib/progress/dummy が読む。フォールバック用）
+ *   学習進捗の生データだけ（@/lib/progress/dummy が読む。
+ *   マイグレーション未適用時のフォールバック専用）。
  */
 
-export { currentUser } from "./user";
+export {};
