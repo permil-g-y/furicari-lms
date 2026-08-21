@@ -92,6 +92,11 @@ export interface Course {
   status: CourseStatus;
   /** 「学習を続ける」の遷移先（course_state.last_lesson_id 相当） */
   nextLessonId?: string;
+  /**
+   * このユーザーが受講中か（Phase 6）。
+   * false のときはカリキュラムまでは見えるが、動画は再生できない。
+   */
+  isEnrolled: boolean;
   /** このコースで学べること */
   learnPoints?: { title: string; note: string }[];
   sortOrder: number;

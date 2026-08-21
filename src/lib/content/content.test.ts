@@ -123,7 +123,10 @@ function buildRowsFromMock(): ContentRows {
 /** undefined なキーの有無を吸収して比較する */
 const normalize = (value: unknown) => JSON.parse(JSON.stringify(value));
 
-const dbSnapshot = buildSnapshot(buildRowsFromMock(), dummyProgress);
+/** Phase 6 の受講権限。ここでは教材の変換だけを見たいので全コース受講中にする */
+const allAccess = { enrolledCourseIds: new Set<string>(), isAdmin: true };
+
+const dbSnapshot = buildSnapshot(buildRowsFromMock(), dummyProgress, allAccess);
 const mockSnapshot = buildMockSnapshot(dummyProgress);
 const api = createContentApi(dbSnapshot, dummyProgress);
 
@@ -228,7 +231,7 @@ test("非公開コンテンツはスナップショットに含まれない（RL
   );
   rows.lessons = rows.lessons.filter((l) => !l.slug.startsWith("capcut-practice"));
 
-  const limited = createContentApi(buildSnapshot(rows, dummyProgress), dummyProgress);
+  const limited = createContentApi(buildSnapshot(rows, dummyProgress, allAccess), dummyProgress);
   assert.equal(limited.getCourse("capcut-practice"), undefined);
   assert.equal(limited.courses.length, 5);
   assert.equal(limited.getLessonsByCourse("capcut-practice").length, 0);

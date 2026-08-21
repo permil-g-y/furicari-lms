@@ -21,6 +21,23 @@ import { CourseCurriculum } from "./CourseCurriculum";
  * PC: パンくず → ヒーロー → このコースで学べること → カリキュラム
  * Mobile: ヒーロー → 学習進捗カード → 学べること → カリキュラム → 下部固定 CTA
  */
+/**
+ * 未受講コースで再生 CTA の代わりに出す案内。
+ *
+ * 新しい色・角丸・影は足さず、既存のトークンだけで作っている。
+ * カリキュラムは見えるので「何が学べるか」は確認できる。
+ */
+function LockedNotice() {
+  return (
+    <div className="flex flex-col gap-1 rounded-card border border-line bg-page px-5 py-4">
+      <span className="text-135 font-bold text-ink">このコースはまだ受講していません</span>
+      <span className="text-125 leading-[1.7] text-ink3">
+        内容は自由にご覧いただけます。受講のお手続きは運営までお問い合わせください。
+      </span>
+    </div>
+  );
+}
+
 export function CourseDetail({
   course,
   longDescription,
@@ -178,12 +195,16 @@ export function CourseDetail({
                 {percent}%
               </span>
             </div>
-            <Button href={watchHref} size={54} block>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
-                <PlayTriangle size={8} />
-              </span>
-              学習を続ける
-            </Button>
+            {course.isEnrolled ? (
+              <Button href={watchHref} size={54} block>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                  <PlayTriangle size={8} />
+                </span>
+                学習を続ける
+              </Button>
+            ) : (
+              <LockedNotice />
+            )}
           </div>
         </div>
       </div>
@@ -261,12 +282,16 @@ export function CourseDetail({
             </div>
 
             <div className="flex items-center gap-3.5 pt-1">
-              <Button href={watchHref} size={56}>
-                <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white/20">
-                  <PlayTriangle size={8} />
-                </span>
-                学習を続ける
-              </Button>
+              {course.isEnrolled ? (
+                <Button href={watchHref} size={56}>
+                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white/20">
+                    <PlayTriangle size={8} />
+                  </span>
+                  学習を続ける
+                </Button>
+              ) : (
+                <LockedNotice />
+              )}
 
               <button
                 type="button"

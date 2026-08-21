@@ -29,9 +29,23 @@ function progressNote(course: Course): string {
 }
 
 function ctaLabel(course: Course): string {
+  // 未受講のコースは再生できないので、内容の確認へ誘導する
+  if (!course.isEnrolled) return "コースの内容を見る";
   if (course.status === "in_progress") return "学習を続ける";
   if (course.status === "completed") return "復習する";
   return "コースを見る";
+}
+
+/**
+ * 未受講コースのバッジ。
+ * 既存の Tag（muted）だけで作り、新しい色や角丸は足していない。
+ */
+function LockedTag({ height = 26, fontSize = 11.5 }: { height?: number; fontSize?: number }) {
+  return (
+    <Tag tone="muted" height={height} paddingX={11} fontSize={fontSize}>
+      受講前
+    </Tag>
+  );
 }
 
 /** 白枠 CTA（Claude Design は枠 #BFDCFA・文字 #2C7BE0・本文書体） */
@@ -59,12 +73,18 @@ export function CourseCardPc({ course }: { course: Course }) {
         className="relative flex h-[132px] items-center justify-center"
         style={{ background: course.cover.bg }}
       >
-        <CourseStatusBadge
-          status={course.status}
-          className={`absolute left-3 top-3 ${
-            course.status === "not_started" ? "text-ink3!" : ""
-          }`}
-        />
+        {course.isEnrolled ? (
+          <CourseStatusBadge
+            status={course.status}
+            className={`absolute left-3 top-3 ${
+              course.status === "not_started" ? "text-ink3!" : ""
+            }`}
+          />
+        ) : (
+          <span className="absolute left-3 top-3">
+            <LockedTag />
+          </span>
+        )}
 
         {course.cover.icon ? (
           <Icon name={course.cover.icon} size={coverIconSize(course.cover.icon)} />
@@ -152,11 +172,13 @@ export function CourseCardMobile({ course }: { course: Course }) {
   const done = course.status === "completed";
   const href = `/courses/${course.id}`;
 
-  const stateClass = learning
-    ? "bg-brand text-white"
-    : done
-      ? "bg-success-bg text-success"
-      : "border border-line bg-page text-ink3";
+  const stateClass = !course.isEnrolled
+    ? "border border-line bg-page text-ink3"
+    : learning
+      ? "bg-brand text-white"
+      : done
+        ? "bg-success-bg text-success"
+        : "border border-line bg-page text-ink3";
 
   return (
     <article
@@ -187,7 +209,13 @@ export function CourseCardMobile({ course }: { course: Course }) {
           <span
             className={`flex h-[22px] shrink-0 items-center self-start rounded-full px-2.5 text-11 font-bold ${stateClass}`}
           >
-            {learning ? "学習中" : done ? "✓ 完了" : "未開始"}
+            {!course.isEnrolled
+              ? "受講前"
+              : learning
+                ? "学習中"
+                : done
+                  ? "✓ 完了"
+                  : "未開始"}
           </span>
           <h2 className="font-rounded text-16 font-bold leading-[1.45] text-ink">
             {course.title}

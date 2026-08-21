@@ -16,6 +16,7 @@ import type {
 } from "@/lib/supabase/database.types";
 import type { ProgressSource } from "@/lib/progress/types";
 import type { LessonMeta } from "@/lib/progress/compute";
+import { canAccessCourse, type EnrollmentAccess } from "@/lib/enrollment/access";
 import type { ContentSnapshot } from "./api";
 
 /**
@@ -99,6 +100,7 @@ export function buildProgressInputs(rows: ContentRows): {
 export function buildSnapshot(
   rows: ContentRows,
   progress: ProgressSource,
+  access: EnrollmentAccess,
 ): ContentSnapshot {
   const categorySlugById = new Map(rows.categories.map((c) => [c.id, c.slug as CategoryKey]));
   const toolSlugById = new Map(rows.tools.map((t) => [t.id, t.slug as ToolKey]));
@@ -163,6 +165,9 @@ export function buildSnapshot(
       completedLessons: progress.completedLessonsByCourse[row.slug] ?? 0,
       status: progress.courseStatus[row.slug] ?? "not_started",
       nextLessonId: progress.nextLessonByCourse[row.slug],
+
+      // 受講権限（Phase 6）。判定はサーバー側で済ませ、真偽値だけを配る
+      isEnrolled: canAccessCourse(access, row.slug),
     }));
 
   const compare = byCourseThenOrder(rows.courses);
