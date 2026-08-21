@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * いま描画されているのが PC 版レイアウトかどうか。
@@ -14,24 +14,41 @@ import { useSyncExternalStore } from "react";
  *   動画を二重にダウンロードすることにもなるため、
  *   実際に表示されている側にだけ再生ソースを渡す。
  *
+ * ■ useSyncExternalStore を使っていない理由
+ *   最初は useSyncExternalStore で書いていたが、**ハイドレーション後に
+ *   クライアント側の値へ同期し直されなかった**（実測：Mobile 幅で開いても
+ *   isDesktop が true のままで、本物のプレイヤーが一度もマウントされない。
+ *   ウィンドウをリサイズして change イベントが飛んだときだけ直る）。
+ *   購読自体は動くが初回の同期だけが起きないため、
+ *   確実に動く「マウント後に読む」形へ切り替えた。
+ *
+ * ■ 初回の反映を requestAnimationFrame に載せている理由
+ *   ハイドレーション直後の描画を待ってから状態を変えることで、
+ *   描画の途中で切り替わることによるちらつきを避ける。
+ *
  * ■ 判定は Tailwind の lg（1024px）に合わせる
  *   ここを変えると出し分けとプレイヤーの実体がずれるので、
  *   ブレイクポイントを変更するときは必ず両方を合わせること。
  */
 const DESKTOP_QUERY = "(min-width: 1024px)";
 
-function subscribe(onChange: () => void): () => void {
-  const query = window.matchMedia(DESKTOP_QUERY);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
 export function useIsDesktopLayout(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => window.matchMedia(DESKTOP_QUERY).matches,
-    // サーバーでは画面幅が分からないので PC 版として描く。
-    // Mobile ではハイドレーション直後に一度だけ切り替わる。
-    () => true,
-  );
+  // サーバーでは画面幅が分からないので PC 版として描き、
+  // マウント後に実際の幅で上書きする。
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const query = window.matchMedia(DESKTOP_QUERY);
+    const sync = () => setIsDesktop(query.matches);
+
+    const initial = requestAnimationFrame(sync);
+    query.addEventListener("change", sync);
+
+    return () => {
+      cancelAnimationFrame(initial);
+      query.removeEventListener("change", sync);
+    };
+  }, []);
+
+  return isDesktop;
 }
