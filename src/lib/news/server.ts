@@ -33,9 +33,24 @@ export type AnnouncementBundle = {
 async function loadAnnouncements(): Promise<AnnouncementBundle> {
   const supabase = await createClient();
 
+  /*
+   * 受講生向けの取得なので、公開条件を **クエリで明示する**。
+   *
+   * RLS にも同じ条件は入っているが、それは
+   * 「受講生には見せない」ための境界であって、
+   * **admin には全件を見せる**という意味でもある。
+   * そのため RLS だけに頼ると、admin が受講生画面を開いたときに
+   * 下書きや予約公開のお知らせまで見えてしまう。
+   * 情報漏洩ではないが、運営が「予約したはずなのに公開されている」と
+   * 誤解する（実際に 7-G の検証で踏んだ）。未読件数にも混ざる。
+   *
+   * 「誰が見ても受講生と同じ結果になる」ことをここで保証する。
+   */
   const { data, error } = await supabase
     .from("announcements")
     .select("*")
+    .eq("is_published", true)
+    .lte("published_at", new Date().toISOString())
     .order("published_at", { ascending: false });
 
   if (error?.code === TABLE_MISSING) {

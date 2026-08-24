@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LessonLink } from "@/components/video/LessonLink";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeading } from "@/components/ui/ProgressBar";
 import { VideoThumbnail } from "@/components/video/VideoThumbnail";
@@ -38,9 +39,9 @@ export async function ResumeSection() {
           {lessons.map((lesson) => {
             const course = content.getCourse(lesson.courseId);
             return (
-              <Link
+              <LessonLink
                 key={lesson.id}
-                href={`/watch/${lesson.id}`}
+                lessonId={lesson.id}
                 className="flex items-center gap-3 rounded-18 border border-line bg-surface p-3 shadow-card"
               >
                 <VideoThumbnail
@@ -60,7 +61,7 @@ export async function ResumeSection() {
                     {course?.title} ・ {remainingLabel(content, lesson.id)}
                   </span>
                 </div>
-              </Link>
+              </LessonLink>
             );
           })}
         </div>
@@ -80,9 +81,9 @@ export async function ResumeSection() {
             const course = content.getCourse(lesson.courseId);
             const chapter = content.getChapter(lesson.chapterId);
             return (
-              <Link
+              <LessonLink
                 key={lesson.id}
-                href={`/watch/${lesson.id}`}
+                lessonId={lesson.id}
                 className="block overflow-hidden rounded-card border border-line bg-surface shadow-card transition-all hover:border-brand-tint3 hover:shadow-card-hover"
               >
                 <VideoThumbnail
@@ -103,7 +104,7 @@ export async function ResumeSection() {
                     <span className="text-125 font-bold text-brand-deep">続きから見る 〉</span>
                   </div>
                 </div>
-              </Link>
+              </LessonLink>
             );
           })}
         </div>

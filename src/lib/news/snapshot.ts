@@ -33,7 +33,7 @@ function isNewAnnouncement(publishedAt: string, now: Date): boolean {
 }
 
 /** jsonb は any 相当で返るため、配列であることだけ確かめて渡す */
-function asBlocks(value: unknown): AnnouncementBlock[] | undefined {
+export function asBlocks(value: unknown): AnnouncementBlock[] | undefined {
   return Array.isArray(value) && value.length > 0
     ? (value as AnnouncementBlock[])
     : undefined;
