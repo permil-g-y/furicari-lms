@@ -69,9 +69,13 @@ async function loadContent(): Promise<ContentBundle> {
   const [categories, tools, courses, chapters, lessons] = await Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
     supabase.from("tools").select("*").order("sort_order"),
-    supabase.from("courses").select("*").order("sort_order"),
+    // 公開条件はクエリで明示する。RLS にも同じ条件はあるが、
+    // あちらは admin に全件を見せる分岐も持つため、
+    // RLS だけに頼ると admin が受講生画面で下書きを見てしまう。
+    // （chapters に公開フラグは無いので、そのまま取得する）
+    supabase.from("courses").select("*").eq("is_published", true).order("sort_order"),
     supabase.from("chapters").select("*").order("sort_order"),
-    supabase.from("lessons").select("*").order("sort_order"),
+    supabase.from("lessons").select("*").eq("is_published", true).order("sort_order"),
   ]);
 
   const results = [categories, tools, courses, chapters, lessons];
