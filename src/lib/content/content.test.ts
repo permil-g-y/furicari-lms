@@ -93,6 +93,10 @@ function buildRowsFromMock(): ContentRows {
 
   const lessonRows: LessonRow[] = allLessons.map((lesson, i) => ({
     ...timestamps,
+    // 動画は未設定の状態を既定にする（実データでも 90 本中 89 本がこの状態）
+    stream_status: null,
+    stream_synced_at: null,
+    stream_error: null,
     id: uuid("less", i + 1),
     slug: lesson.id,
     course_id: courseIdBySlug.get(lesson.courseId)!,

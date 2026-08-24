@@ -15,6 +15,9 @@ export type ContentLevel = "beginner" | "intermediate" | "advanced";
 /** lesson_progress.status。@/lib/types の LessonStatus と同じ値を持つ */
 export type LessonProgressStatus = "not_started" | "in_progress" | "completed";
 /** announcements.category。@/lib/types の AnnouncementCategory と同じ値を持つ */
+/** lessons.stream_status。@/lib/stream/video-state の StreamStatus と同じ値を持つ */
+export type StreamStatusDb = "pending" | "ready" | "error";
+/** announcements.category。@/lib/types の AnnouncementCategory と同じ値を持つ */
 export type AnnouncementCategoryDb =
   | "new_course"
   | "event"
@@ -100,6 +103,9 @@ export type LessonInsert = {
   is_published?: boolean;
   published_at?: string;
   sort_order?: number;
+  stream_status?: StreamStatusDb | null;
+  stream_synced_at?: string | null;
+  stream_error?: string | null;
 };
 
 export interface Database {
@@ -235,6 +241,10 @@ export interface Database {
           is_published: boolean;
           published_at: string;
           sort_order: number;
+          /** 動画の処理状態。stream_video_id が null のレッスンでは null */
+          stream_status: StreamStatusDb | null;
+          stream_synced_at: string | null;
+          stream_error: string | null;
         };
         Insert: LessonInsert;
         Update: Partial<LessonInsert>;
@@ -389,6 +399,7 @@ export interface Database {
       content_level: ContentLevel;
       lesson_status: LessonProgressStatus;
       announcement_category: AnnouncementCategoryDb;
+      stream_status: StreamStatusDb;
     };
     CompositeTypes: Record<never, never>;
   };
