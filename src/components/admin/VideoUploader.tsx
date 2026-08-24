@@ -71,8 +71,8 @@ export function VideoUploader({ lesson }: { lesson: AdminLesson }) {
     // ここからは Cloudflare 側の変換待ち
     setPhase("processing");
     setMessage("Cloudflare で動画を処理しています。完了までしばらくかかります。");
-    await waitUntilReady(lesson.slug, setMessage);
-    setPhase("done");
+    const outcome = await waitUntilReady(lesson.slug, setMessage);
+    setPhase(outcome === "error" ? "failed" : "done");
     router.refresh();
   }
 
@@ -204,19 +204,38 @@ function postFile(
  * Cloudflare は完了時刻を教えてくれないため、間隔を空けながら確認する。
  * 公式にも推奨間隔の記載は無い。長い動画でも待ち切れるよう、
  * 徐々に間隔を伸ばして最大 5 分ほど粘る。
+ *
+ * ■ 決着がついたら必ず止める
+ *   以前は結果に関わらず最後まで回していたため、変換が終わったあとも
+ *   数分間ポーリングと router.refresh() が続いていた。
+ *   その再描画が、運営が押した「公開する」と競合して
+ *   **クリックが無かったことになる**（実際に E2E で 1 回目の公開が失われた）。
+ *   ready / error が確定した時点で抜ける。
  */
-async function waitUntilReady(slug: string, onMessage: (text: string) => void) {
+async function waitUntilReady(
+  slug: string,
+  onMessage: (text: string) => void,
+): Promise<"ready" | "error" | "timeout"> {
   const delays = [3000, 3000, 5000, 5000, 8000, 8000, 12000, 15000, 20000, 30000, 30000, 60000, 60000];
   for (const delay of delays) {
     await new Promise((resolve) => setTimeout(resolve, delay));
     const result = await syncVideoState(slug);
     if (!result.ok) {
       onMessage(result.message);
-      return;
+      return "error";
+    }
+    if (result.data.status === "ready") {
+      onMessage("動画の処理が完了しました。公開できます。");
+      return "ready";
+    }
+    if (result.data.status === "error") {
+      onMessage("動画の処理に失敗しました。ファイルを確認して入れ直してください。");
+      return "error";
     }
     onMessage("処理状況を確認しています…");
   }
   onMessage(
     "処理に時間がかかっています。しばらくしてから「動画情報を取得」を押して確認してください。",
   );
+  return "timeout";
 }

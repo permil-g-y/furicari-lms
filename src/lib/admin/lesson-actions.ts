@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { LessonInsert } from "@/lib/supabase/database.types";
 import { createDirectUpload, fetchVideoState, StreamApiError } from "@/lib/stream/api";
-import { canPublishLesson } from "@/lib/stream/video-state";
+import { canPublishLesson, type StreamStatus } from "@/lib/stream/video-state";
 import { getAdminLesson, getAdminLessons } from "./lesson-server";
 import { syncTargets } from "./lessons";
 import { recordAdminAction } from "./audit";
@@ -90,7 +90,9 @@ export async function startVideoUpload(
  *   CHECK 制約で拒否すると、実際に起きたことを DB へ記録できなくなる。
  *   真実を記録したうえで、安全側（非公開）へ倒す。
  */
-export async function syncVideoState(slug: string): Promise<LessonActionResult> {
+export async function syncVideoState(
+  slug: string,
+): Promise<LessonActionResult<{ status: StreamStatus }>> {
   await requireAdmin();
 
   const lesson = await getAdminLesson(slug);
@@ -128,7 +130,9 @@ export async function syncVideoState(slug: string): Promise<LessonActionResult> 
   }
 
   revalidateLesson(slug);
-  return { ok: true };
+  // 呼び出し側が「もう確認しなくてよいか」を判断できるように状態を返す。
+  // これが無いと、変換が終わったあともポーリングが回り続ける。
+  return { ok: true, data: { status: state.status } };
 }
 
 /**
