@@ -8,6 +8,13 @@ import { createDirectUpload, fetchVideoState, StreamApiError } from "@/lib/strea
 import { canPublishLesson, type StreamStatus } from "@/lib/stream/video-state";
 import { getAdminLesson, getAdminLessons } from "./lesson-server";
 import { syncTargets } from "./lessons";
+import {
+  changedRows,
+  reorderLesson,
+  validateFields,
+  type EditableLesson,
+  type LessonFields,
+} from "./lesson-edit";
 import { recordAdminAction } from "./audit";
 
 /**
@@ -212,4 +219,104 @@ export async function setLessonPublished(
   // 受講生側の一覧・カリキュラムにも反映する
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/**
+ * レッスンの内容を編集する。
+ *
+ * 動画の差し替えとは別の入口にしている。
+ * 文言の直しは頻度が高く、動画に触れずに済ませたいため。
+ */
+export async function updateLessonFields(
+  slug: string,
+  fields: LessonFields,
+): Promise<LessonActionResult> {
+  await requireAdmin();
+
+  const lesson = await getAdminLesson(slug);
+  if (!lesson) return { ok: false, message: "レッスンが見つかりません。" };
+
+  const validated = validateFields(fields);
+  if (!validated.ok) return { ok: false, message: validated.message };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lessons")
+    .update(validated.patch)
+    .eq("id", lesson.id);
+
+  if (error) return { ok: false, message: `保存できませんでした: ${error.message}` };
+
+  revalidateLesson(slug);
+  // 受講生側のカリキュラム・動画一覧・検索へも反映する
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/**
+ * コース内でレッスンを 1 つ上／下へ動かす。
+ *
+ * ■ 番号も振り直す
+ *   カリキュラムも動画閲覧画面も number（01, 02 …）で表示している。
+ *   sort_order だけ入れ替えると「05 の次が 03」に見える。
+ *
+ * ■ 変わった行だけ書き込む
+ *   コース全体を毎回書き直すと updated_at が無意味に動き、
+ *   後から「何を変えたのか」が分からなくなる。
+ */
+export async function moveLesson(
+  slug: string,
+  direction: -1 | 1,
+): Promise<LessonActionResult> {
+  await requireAdmin();
+
+  const { lessons } = await getAdminLessons();
+  const target = lessons.find((l) => l.slug === slug);
+  if (!target) return { ok: false, message: "レッスンが見つかりません。" };
+
+  const supabase = await createClient();
+
+  // 並び替えは同じコースの中だけで行う
+  const { data, error } = await supabase
+    .from("lessons")
+    .select("id, slug, number, sort_order, course_id")
+    .eq("course_id", (await courseUuidOf(target.id)) ?? "");
+
+  if (error) return { ok: false, message: `並び順を取得できませんでした: ${error.message}` };
+
+  const editable: EditableLesson[] = (data ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    courseId: row.course_id,
+    number: row.number,
+    sortOrder: row.sort_order,
+  }));
+
+  const { ordered, changed } = reorderLesson(editable, target.id, direction);
+  if (!changed) return { ok: true };
+
+  for (const row of changedRows(editable, ordered)) {
+    const { error: writeError } = await supabase
+      .from("lessons")
+      .update({ number: row.number, sort_order: row.sortOrder })
+      .eq("id", row.id);
+    if (writeError) {
+      return { ok: false, message: `並び順を保存できませんでした: ${writeError.message}` };
+    }
+  }
+
+  revalidatePath("/admin/lessons");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** レッスン uuid からコース uuid を引く */
+async function courseUuidOf(lessonId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lessons")
+    .select("course_id")
+    .eq("id", lessonId)
+    .maybeSingle();
+  return data?.course_id ?? null;
 }

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { VideoUploader } from "@/components/admin/VideoUploader";
+import { LessonFieldsForm } from "@/components/admin/LessonFieldsForm";
+import { LessonOrderButtons } from "@/components/admin/LessonOrderButtons";
+import { getContent } from "@/lib/content/server";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getAdminLesson } from "@/lib/admin/lesson-server";
 import { formatDuration } from "@/lib/content/format";
@@ -15,6 +18,11 @@ export default async function AdminLessonPage({
   const { lessonId } = await params;
   const lesson = await getAdminLesson(lessonId);
   if (!lesson) notFound();
+
+  // 説明・学べること・ツール等は受講生向けスナップショットから引く。
+  // 下書きのレッスンはそこに載らないので、その場合は空で編集を始める。
+  const content = await getContent();
+  const snapshot = content.getLesson(lessonId);
 
   return (
     <>
@@ -30,6 +38,7 @@ export default async function AdminLessonPage({
       <AdminPageHeader
         title={`${String(lesson.number).padStart(2, "0")}　${lesson.title}`}
         description={`${lesson.courseTitle} / ${lesson.chapterTitle}`}
+        action={<LessonOrderButtons slug={lesson.slug} />}
       />
 
       <section className="mb-6 rounded-2xl border border-line bg-surface px-6 py-5">
@@ -52,6 +61,15 @@ export default async function AdminLessonPage({
           </div>
         </dl>
       </section>
+
+      <LessonFieldsForm
+        lesson={lesson}
+        description={snapshot?.description ?? ""}
+        keyPoints={snapshot?.keyPoints ?? []}
+        tool={snapshot?.tool ?? "premiere"}
+        category={snapshot?.category ?? "video-editing"}
+        level={snapshot?.level ?? "beginner"}
+      />
 
       <VideoUploader lesson={lesson} />
     </>

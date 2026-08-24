@@ -3,11 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import {
-  setLessonPublished,
-  startVideoUpload,
-  syncVideoState,
-} from "@/lib/admin/lesson-actions";
+import { startVideoUpload, syncVideoState } from "@/lib/admin/lesson-actions";
 import { videoBucket, type AdminLesson } from "@/lib/admin/lessons";
 import { VideoStatusTag } from "./VideoStatusTag";
 
@@ -19,6 +15,12 @@ import { VideoStatusTag } from "./VideoStatusTag";
  *   ファイル本体はブラウザから Cloudflare へ直接送る。
  *   Vercel の関数にはリクエストボディの上限があり、数百 MB は通せないため。
  *   API トークンはブラウザへ渡らない。
+ *
+ * ■ 公開の切り替えはここに置かない
+ *   このカードは **動画があるレッスンでしか描画されない**。
+ *   ここに公開ボタンを置くと、動画を持たないレッスンの公開状態を
+ *   管理画面から変えられなくなる（89 本がその状態だった）。
+ *   公開はレッスンの属性なので、レッスンの編集側に置いている。
  *
  * ■ アップロード後にすぐ「完了」と言わない
  *   Cloudflare 側の変換が終わるまで再生できない。
@@ -142,19 +144,6 @@ export function VideoUploader({ lesson }: { lesson: AdminLesson }) {
               動画情報を取得
             </Button>
 
-            <Button
-              variant={lesson.isPublished ? "danger" : "primary"}
-              size={38}
-              onClick={() => {
-                setMessage(null);
-                void setLessonPublished(lesson.slug, !lesson.isPublished).then((result) => {
-                  if (!result.ok) setMessage(result.message);
-                  router.refresh();
-                });
-              }}
-            >
-              {lesson.isPublished ? "下書きに戻す" : "公開する"}
-            </Button>
           </div>
         )}
 
