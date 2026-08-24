@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import Link from "next/link";
+import { LessonLink } from "@/components/video/LessonLink";
 import { LessonStatusBadge, Tag } from "@/components/ui/Tag";
 import { VideoThumbnail } from "./VideoThumbnail";
 import { useFavorites } from "@/lib/favorites-context";
@@ -75,7 +75,7 @@ export function VideoCardGrid({
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card transition-all hover:border-brand-tint3 hover:shadow-card-hover">
-      <Link href={`/watch/${lesson.id}`} className="block">
+      <LessonLink lessonId={lesson.id} className="block">
         <VideoThumbnail
           tool={lesson.tool}
           durationSeconds={lesson.durationSeconds}
@@ -83,16 +83,16 @@ export function VideoCardGrid({
           percent={percent}
           scale="md"
         />
-      </Link>
+      </LessonLink>
 
       <div className="flex flex-1 flex-col gap-2.5 px-[18px] pb-5 pt-[18px]">
         <div className="flex items-start gap-2.5">
-          <Link
-            href={`/watch/${lesson.id}`}
+          <LessonLink
+            lessonId={lesson.id}
             className="flex-1 text-155 font-bold leading-[1.55] text-ink hover:text-brand-deep"
           >
             {lesson.title}
-          </Link>
+          </LessonLink>
           <FavoriteHeart lessonId={lesson.id} className="mt-0.5" />
         </div>
 
@@ -109,6 +109,12 @@ export function VideoCardGrid({
         )}
 
         <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+          {/*
+            受講していないコースの動画は再生できない。
+            リンクを外すだけだと「押しても何も起きないカード」になり、
+            受講生からは壊れているように見えるため、理由を出す。
+          */}
+          {course && !course.isEnrolled && <Tag tone="muted">受講前</Tag>}
           {showCategory && <Tag tone="default">{categoryLabel(lesson.category)}</Tag>}
           <Tag tone="brand">{levelLabel(lesson.level)}</Tag>
           {showStatus && <LessonStatusBadge status={status} percent={percent} />}
@@ -140,8 +146,8 @@ export function VideoCardList({
     metaLine ?? `${course?.title ?? ""} ・ ${formatDuration(lesson.durationSeconds)}`;
 
   return (
-    <Link
-      href={`/watch/${lesson.id}`}
+    <LessonLink
+      lessonId={lesson.id}
       className="flex items-start gap-3 rounded-18 border border-line bg-surface p-3.5 shadow-card"
     >
       <VideoThumbnail
@@ -165,12 +171,17 @@ export function VideoCardList({
         <span className="mt-2 truncate text-115 leading-[17px] text-ink4">{meta}</span>
 
         <div className="mt-auto flex gap-1.5 overflow-hidden">
+          {course && !course.isEnrolled && (
+            <Tag tone="muted" paddingX={10} fontSize={11} className="shrink-0 leading-none">
+              受講前
+            </Tag>
+          )}
           <Tag tone="brand" paddingX={10} fontSize={11} className="shrink-0 leading-none">
             {levelLabel(lesson.level)}
           </Tag>
           <LessonStatusBadge status={status} percent={percent} fontSize={11} />
         </div>
       </div>
-    </Link>
+    </LessonLink>
   );
 }

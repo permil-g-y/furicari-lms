@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LessonLink } from "@/components/video/LessonLink";
 import { PlayTriangle } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/ProgressBar";
 import { Tag } from "@/components/ui/Tag";
@@ -31,7 +31,7 @@ export async function NewLessonsSection() {
             key={lesson.id}
             className="overflow-hidden rounded-card border border-line bg-surface shadow-card transition-all hover:border-brand-tint3 hover:shadow-card-hover"
           >
-            <Link href={`/watch/${lesson.id}`} className="block">
+            <LessonLink lessonId={lesson.id} className="block">
               <VideoThumbnail
                 tool={lesson.tool}
                 durationSeconds={lesson.durationSeconds}
@@ -53,15 +53,15 @@ export async function NewLessonsSection() {
                   <PlayTriangle size={12} color={tools[lesson.tool].ink} />
                 </span>
               </VideoThumbnail>
-            </Link>
+            </LessonLink>
 
             <div className="flex flex-col gap-[9px] px-[18px] pb-[18px] pt-4">
-              <Link
-                href={`/watch/${lesson.id}`}
+              <LessonLink
+                lessonId={lesson.id}
                 className="text-15 font-bold leading-[1.55] text-ink hover:text-brand-deep"
               >
                 {lesson.title}
-              </Link>
+              </LessonLink>
               <div className="flex items-center gap-2">
                 <Tag tone="brand" height={22} paddingX={8} fontSize={11}>
                   {levelLabel(lesson.level)}

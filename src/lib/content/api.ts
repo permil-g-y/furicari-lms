@@ -204,14 +204,34 @@ export function createContentApi(
     };
   }
 
-  /** 現在学習中のコース */
+  /**
+   * 現在学習中のコース。
+   *
+   * **受講権限のあるコースだけを返す。**
+   * 権限が切れたコースを「学習中」として出しても、受講生は続きを見られない。
+   * 「学習を続ける」を押しても弾かれるだけで、壊れているとしか映らない。
+   */
   function getInProgressCourses(): Course[] {
-    return snapshot.courses.filter((c) => getCourseStatus(c.id) === "in_progress");
+    return snapshot.courses.filter(
+      (c) => c.isEnrolled && getCourseStatus(c.id) === "in_progress",
+    );
   }
 
-  /** TOP のヒーローに出す「現在学習中のコース」 */
+  /**
+   * TOP のヒーローに出す「現在学習中のコース」。
+   *
+   * 学習中のコースが無ければ、**受講できるコース**から選ぶ。
+   * ここで受講権限を見ないと、招待直後の受講生に
+   * 「受講していないコース」がヒーローとして出てしまう
+   *（実際に 1 コースだけ付与した受講生で発生した）。
+   * どれも受講していない場合だけ、案内として先頭のコースを出す。
+   */
   function getPrimaryCourse(): Course {
-    return getInProgressCourses()[0] ?? snapshot.courses[0];
+    return (
+      getInProgressCourses()[0] ??
+      snapshot.courses.find((c) => c.isEnrolled) ??
+      snapshot.courses[0]
+    );
   }
 
   function getFavoriteLessons(): Lesson[] {
