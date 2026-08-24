@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminSearchForm } from "@/components/admin/AdminSearchForm";
 import { StudentTable } from "@/components/admin/StudentTable";
@@ -25,6 +26,14 @@ export default async function AdminStudentsPage({
           unavailable
             ? undefined
             : `${rows.length} 名${attention > 0 ? ` ・ 要対応 ${attention} 名` : ""}`
+        }
+        action={
+          <Link
+            href="/admin/students/invite"
+            className="inline-flex h-11 items-center rounded-full bg-brand px-5 font-rounded text-14 font-bold text-white transition-colors hover:bg-brand-hover"
+          >
+            受講生を招待
+          </Link>
         }
       />
 
