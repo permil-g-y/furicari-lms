@@ -79,6 +79,15 @@
   `node_modules/next/dist/docs/` を参照するよう指示している。
 - テストランナーは Node 標準の `node:test` を `tsx` 経由で実行（`npm test`）。
   Jest / Vitest は導入していない。
+- **Supabase Free プランは 7 日間アクティビティが無いと自動停止される。**
+  停止中は DNS レコードごと消えるため、ログインを含む全通信が失敗し、
+  画面には `src/lib/auth/actions.ts` のフォールバック文言
+  「処理に失敗しました。時間をおいてもう一度お試しください。」だけが出る。
+  2026-11-11 に実際に発生した（最終ログイン 2026-09-23 → 約 7 週間無通信）。
+  対策として Vercel Cron（`vercel.json`）が毎日 `/api/keep-alive` を叩き、
+  RPC `public.keep_alive()` で Postgres まで到達させている。
+  **これは応急策で、Cron が止まれば再発する。恒久対策は Supabase Pro。**
+  受講生が日常的に使い始めれば、このリスク自体が自然に消える。
 
 ---
 
