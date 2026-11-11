@@ -2,23 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
 import { getSupabasePublishableKey, getSupabaseUrl } from "./env";
-
-/**
- * 認証が不要なパス。これ以外は全てログイン必須として扱う。
- * （Next.js 16 では middleware が proxy へリネームされている）
- */
-const PUBLIC_PATHS = [
-  "/login",
-  "/password-reset",
-  "/set-password",
-  "/auth", // /auth/confirm などのコールバック
-];
-
-function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  );
-}
+import { isPublicPath } from "./public-paths";
 
 /**
  * Cookie ベースのセッションを更新しつつ、認証状態に応じてリダイレクトする。
