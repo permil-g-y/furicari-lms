@@ -22,6 +22,12 @@ export type CourseConfig = {
   };
   /** 表示順そのもの。index + 1 が Chapter 番号になる */
   chapters: string[];
+  /**
+   * 管理番号 → 表示名の差し替え。
+   * シートの誤字をここで直す。元のスプレッドシートは書き換えない方針なので、
+   * 「どこで何を直したか」がこの 1 箇所に残るようにしている。
+   */
+  titleOverrides?: Record<string, string>;
 };
 
 export type PlannedLesson = {
@@ -31,6 +37,9 @@ export type PlannedLesson = {
   chapterTitle: string;
   /** コース内通し番号 */
   number: number;
+  /** シート D 列そのまま。Drive のファイル名との照合に使う */
+  rawTitle: string;
+  /** LMS に表示する名前。管理番号を落とし、必要なら誤字を直したもの */
   title: string;
   description: string;
   /** シート C 列。階層にはしないが照合の手掛かりとして残す */
@@ -116,6 +125,37 @@ export async function fetchSheetCsv(config: CourseConfig): Promise<string[][]> {
   return rows.slice(1);
 }
 
+/**
+ * 学習時間ラベル。実尺の合計から出す（手入力しない）。
+ *
+ * ■ なぜ 15 分単位に丸めるのか
+ *   「約」と言いながら 1 時間 29 分と出すのは細かすぎるし、
+ *   逆に時間だけに丸めると 89 分が「約1時間」になって 30 分も削れてしまう。
+ *   15 分単位なら、既存コース（約3〜7時間）の見え方を崩さずに
+ *   89 分を「約1時間30分」と表せる。
+ */
+export function formatDurationLabel(totalSeconds: number): string {
+  if (totalSeconds <= 0) return "";
+  const step = 15;
+  const minutes = Math.max(step, Math.round(totalSeconds / 60 / step) * step);
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `約${rest}分`;
+  if (rest === 0) return `約${hours}時間`;
+  return `約${hours}時間${rest}分`;
+}
+
+/**
+ * 表示名から管理番号を落とす。
+ *
+ * 画面には通し番号のバッジ（"03"）が別に出るので、
+ * タイトル側にも「2-1-1.」が残ると二重になる。
+ * 管理番号自体は code として保持し、ledger と SQL のコメントで追える。
+ */
+export function stripCode(title: string): string {
+  return title.trim().replace(/^\d+-\d+-\d+\s*[.．]?\s*/, "");
+}
+
 /** 「2-1-1.タイトル」「4-1-1タイトル」どちらからも番号を取り出す */
 export function extractCode(title: string): string | null {
   const match = title.trim().match(/^(\d+)-(\d+)-(\d+)/);
@@ -140,13 +180,13 @@ export function buildPlan(
   for (const row of rows) {
     const chapterCell = (row[1] ?? "").trim();
     const lessonGroup = (row[2] ?? "").trim();
-    const title = (row[3] ?? "").trim();
+    const rawTitle = (row[3] ?? "").trim();
     const description = (row[4] ?? "").trim();
-    if (!chapterCell || !title) continue;
+    if (!chapterCell || !rawTitle) continue;
 
-    const code = extractCode(title);
+    const code = extractCode(rawTitle);
     if (!code) {
-      throw new Error(`管理番号を読み取れない行があります: "${title}"`);
+      throw new Error(`管理番号を読み取れない行があります: "${rawTitle}"`);
     }
     if (seenCodes.has(code)) {
       throw new Error(`管理番号が重複しています: ${code}`);
@@ -176,8 +216,8 @@ export function buildPlan(
       // 正規化せずに比べると、見た目が同じ文字列を「表記ゆれ」と誤検出し、
       // 本物の表記ゆれ（5-1-1）が埋もれる。
       const driveTitle = drive.driveFileName.replace(/\.mp4$/i, "").normalize("NFC");
-      if (driveTitle !== title.normalize("NFC")) {
-        titleMismatches.push({ code, sheetTitle: title, driveFileName: drive.driveFileName });
+      if (driveTitle !== rawTitle.normalize("NFC")) {
+        titleMismatches.push({ code, sheetTitle: rawTitle, driveFileName: drive.driveFileName });
       }
     }
 
@@ -186,7 +226,8 @@ export function buildPlan(
       chapterNumber,
       chapterTitle,
       number: lessons.length + 1,
-      title,
+      rawTitle,
+      title: config.titleOverrides?.[code] ?? stripCode(rawTitle),
       description,
       lessonGroup,
       driveFileId: drive?.driveFileId ?? null,

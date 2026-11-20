@@ -28,7 +28,13 @@
 
 import { readFileSync, writeFileSync, existsSync, statSync, openAsBlob, unlinkSync } from "node:fs";
 import { createDirectUpload, fetchVideoState } from "../src/lib/stream/api";
-import { fetchSheetCsv, buildPlan, type CourseConfig, type PlannedLesson } from "./import-data/plan";
+import {
+  fetchSheetCsv,
+  buildPlan,
+  formatDurationLabel,
+  type CourseConfig,
+  type PlannedLesson,
+} from "./import-data/plan";
 
 type Config = CourseConfig & {
   driveFolderId: string;
@@ -167,6 +173,8 @@ function buildSql(
   const courseRef = `(select id from public.courses where slug = ${q(c.slug)})`;
   const categoryRef = `(select id from public.categories where slug = ${q(c.categorySlug)})`;
 
+  const toolSlugs = [...new Set(plan.lessons.map((l) => resolveToolSlug(l, config)))].sort();
+
   const out: string[] = [];
   out.push("-- !! このファイルは scripts/import-course.ts が生成します。直接編集しないでください。!!");
   out.push(`-- 生成元: スプレッドシート ${config.spreadsheetId} / Drive ${config.driveFolderId}`);
@@ -175,6 +183,20 @@ function buildSql(
   out.push("-- 既存の他コース・受講生の進捗には一切触れない。");
   out.push("");
   out.push("begin;");
+  out.push("");
+
+  // 参照先が無いまま入れると category_id / tool_id が黙って null になり、
+  // 絞り込みから漏れたりサムネイルが描けなくなる。先に落とす。
+  out.push("-- 参照先の存在確認。足りなければ何も入れずに中断する。");
+  out.push(`do $$
+begin
+  if not exists (select 1 from public.categories where slug = ${q(c.categorySlug)}) then
+    raise exception 'categories.slug = % が存在しません', ${q(c.categorySlug)};
+  end if;
+  if (select count(*) from public.tools where slug in (${toolSlugs.map(q).join(", ")})) <> ${toolSlugs.length} then
+    raise exception 'tools の slug が揃っていません';
+  end if;
+end $$;`);
   out.push("");
 
   out.push("-- コース");
@@ -255,17 +277,45 @@ on conflict (slug) do update set
   return out.join("\n");
 }
 
-/** 既存コースに合わせた「約N時間」ラベル。実尺の合計から出す（捏造しない）。 */
 function courseDurationLabel(
-  plan: { lessons: PlannedLesson[] },
+  _plan: { lessons: PlannedLesson[] },
   ledger: Record<string, LedgerEntry>,
 ): string {
   const total = Object.values(ledger)
     .filter((e) => e.state === "ready")
     .reduce((sum, e) => sum + (e.durationSeconds ?? 0), 0);
-  if (total === 0) return "";
-  const minutes = Math.round(total / 60);
-  return minutes < 60 ? `約${minutes}分` : `約${Math.round(minutes / 60)}時間`;
+  return formatDurationLabel(total);
+}
+
+/**
+ * 取り消し用 SQL。投入をなかったことにする。
+ *
+ * ■ 自動では絶対に実行しない
+ *   生成するだけで、流すかどうかは人が決める。
+ *   このコースのレッスンに受講生の進捗が付いていた場合、
+ *   lessons の削除に連動してその進捗も消える（on delete cascade）ため、
+ *   「入れた直後に戻す」以外の用途では使わないこと。
+ */
+function buildRollbackSql(config: Config): string {
+  const slug = config.course.slug;
+  return [
+    "-- !! 取り消し用。通常の運用では実行しないこと。!!",
+    `-- ${config.course.title} の投入をなかったことにする。`,
+    "--",
+    "-- 影響範囲はこのコースのみ。他コース・他レッスンには触れない。",
+    "-- ただし、このコースのレッスンに付いた受講生の進捗は",
+    "-- lessons の削除に連動して消える（on delete cascade）。",
+    "-- Cloudflare 上の動画は消えないので、再投入すれば同じ uid で繋がる。",
+    "",
+    "begin;",
+    "",
+    `delete from public.lessons where slug like ${q(`${slug}-%`)};`,
+    `delete from public.chapters where slug like ${q(`${slug}-ch%`)};`,
+    `delete from public.courses where slug = ${q(slug)};`,
+    "",
+    "commit;",
+    "",
+  ].join("\n");
 }
 
 async function main() {
@@ -317,9 +367,11 @@ async function main() {
     await syncStates(ledger);
   }
 
-  const sqlPath = `supabase/seed/0003_${config.course.slug.replace(/-/g, "_")}.sql`;
-  writeFileSync(sqlPath, buildSql(plan, config, ledger));
-  console.log(`\n■ 投入用 SQL を書き出しました: ${sqlPath}`);
+  const base = `supabase/seed/0003_${config.course.slug.replace(/-/g, "_")}`;
+  writeFileSync(`${base}.sql`, buildSql(plan, config, ledger));
+  writeFileSync(`${base}_rollback.sql`, buildRollbackSql(config));
+  console.log(`\n■ 投入用 SQL を書き出しました: ${base}.sql`);
+  console.log(`■ 取り消し用 SQL も書き出しました: ${base}_rollback.sql`);
 
   const ready = Object.values(ledger).filter((e) => e.state === "ready").length;
   const pending = Object.values(ledger).filter((e) => e.state === "pending").length;

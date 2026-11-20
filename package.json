@@ -9,7 +9,7 @@
     "lint": "eslint",
     "types:supabase": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > src/lib/supabase/database.types.ts",
     "db:push": "supabase db push",
-    "test": "tsx --test \"src/**/*.test.ts\"",
+    "test": "tsx --test \"src/**/*.test.ts\" \"scripts/**/*.test.ts\"",
     "seed:generate": "tsx scripts/generate-content-seed.ts",
     "db:verify": "node scripts/verify-content-db.mjs",
     "import:course": "tsx --conditions=react-server scripts/import-course.ts"

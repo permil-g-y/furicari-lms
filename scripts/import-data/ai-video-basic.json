@@ -25,8 +25,17 @@
     "サムネイル候補をAIに選んでもらおう"
   ],
   "toolRules": [
-    { "match": "Claude", "toolSlug": "claude" },
-    { "match": "AI", "toolSlug": "claude" }
+    {
+      "match": "Claude",
+      "toolSlug": "claude"
+    },
+    {
+      "match": "AI",
+      "toolSlug": "claude"
+    }
   ],
-  "defaultToolSlug": "premiere"
+  "defaultToolSlug": "premiere",
+  "titleOverrides": {
+    "5-1-1": "AIに参考動画を分析してもらおう"
+  }
 }
