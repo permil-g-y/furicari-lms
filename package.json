@@ -11,7 +11,8 @@
     "db:push": "supabase db push",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "seed:generate": "tsx scripts/generate-content-seed.ts",
-    "db:verify": "node scripts/verify-content-db.mjs"
+    "db:verify": "node scripts/verify-content-db.mjs",
+    "import:course": "tsx --conditions=react-server scripts/import-course.ts"
   },
   "dependencies": {
     "@cloudflare/stream-react": "^1.9.3",

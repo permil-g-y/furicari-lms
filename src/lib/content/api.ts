@@ -146,6 +146,10 @@ export function createContentApi(
     if (!lesson) return 0;
     if (p.status === "completed") return 100;
     if (p.status === "not_started") return 0;
+    // 動画が未納品のレッスンは尺が 0 で入る。
+    // ここで割ると NaN になり、バッジが「視聴中 NaN%」になるうえ、
+    // ProgressBar の width が不正な CSS として無視されて満タンに見える。
+    if (lesson.durationSeconds <= 0) return 0;
     return Math.round((p.positionSeconds / lesson.durationSeconds) * 100);
   }
 
