@@ -26,7 +26,7 @@
  *   他コースにも、受講生の進捗にも触れない。
  */
 
-import { readFileSync, writeFileSync, existsSync, statSync, openAsBlob, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, statSync, openAsBlob } from "node:fs";
 import { createDirectUpload, fetchVideoState } from "../src/lib/stream/api";
 import {
   fetchSheetCsv,
