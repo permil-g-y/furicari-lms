@@ -1,0 +1,41 @@
+{
+  "spreadsheetId": "1kcIOrgVOy2PP3h5wgInSOu5CmszxDS01PhGPEwiDwdI",
+  "gid": null,
+  "driveFolderId": "1Ouf8nLeGuPCPwSzy7aqZxL1WV6NkigjD",
+  "course": {
+    "slug": "ai-video-basic",
+    "title": "AI動画編集基礎(半自動)",
+    "description": "自動字幕・要約・素材生成などのAIツールで、編集時間を大きく短縮します。",
+    "level": "beginner",
+    "categorySlug": "ai",
+    "coverBgColor": "#F0EEFF",
+    "coverIcon": "icon-sparkle-cluster",
+    "sortOrder": 7,
+    "publishedOn": "2026-11-20"
+  },
+  "chapters": [
+    "AIで動画編集はどう変わるのか",
+    "フィラーワードを自動で削除しよう",
+    "SRT字幕をAIでまとめて修正しよう",
+    "Premiere Proで詰まったらClaudeに聞こう",
+    "参考動画をAIで分解して構成をつかもう",
+    "AIに自分の動画編集を評価してもらおう",
+    "AIを使って納品前チェックをしよう",
+    "SNS向けに聞きやすい音量へ整えよう",
+    "サムネイル候補をAIに選んでもらおう"
+  ],
+  "toolRules": [
+    {
+      "match": "Claude",
+      "toolSlug": "claude"
+    },
+    {
+      "match": "AI",
+      "toolSlug": "claude"
+    }
+  ],
+  "defaultToolSlug": "premiere",
+  "titleOverrides": {
+    "5-1-1": "AIに参考動画を分析してもらおう"
+  }
+}
